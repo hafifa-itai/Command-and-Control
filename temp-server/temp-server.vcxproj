@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{f40a6c4d-a004-4ba8-8d22-48f378e3713c}</ProjectGuid>
-    <RootNamespace>Server</RootNamespace>
+    <ProjectGuid>{ead9da2b-bf01-4fab-a83e-02714f75572a}</ProjectGuid>
+    <RootNamespace>tempserver</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -56,7 +56,6 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
-    <Import Project="..\sharedClasses\sharedClasses.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -94,6 +93,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -120,17 +121,19 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AgentConnection.cpp" />
-    <ClCompile Include="Server.cpp" />
+    <ClCompile Include="..\Server\MyServer.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="TcpServer.cpp" />
+    <ClCompile Include="tempserver.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AgentConnection.hpp" />
-    <ClInclude Include="Connection.hpp" />
-    <ClInclude Include="Server.hpp" />
+    <ClInclude Include="TcpServer.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
