@@ -1,36 +1,121 @@
 #include "Server.hpp"
 
+VOID PrintActiveSockets(std::vector<AgentConnection*>& arrAgentConnections) {
+    SocketClientInfo socketClientInfo;
 
-BOOL ListenForTcpPort(LPVOID lparam)
+    if (arrAgentConnections.size() == 0) {
+        std::cout << "[+] No active sockets\n";
+    }
+    else {
+        std::cout << "[+] Active sockets:\n";
+
+        for (AgentConnection* conn : arrAgentConnections) {
+            conn->GetSocketClientInfo(socketClientInfo);
+            std::cout << "[+] Connected to " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "\n";
+        }
+    }
+}
+
+BOOL ListenForTcpPort(INT nPort, SOCKET listeningSocket, std::vector<AgentConnection*>& arrAgentConnections)
 {
     sockaddr_in addr{};
     INT addrLen = sizeof(addr);
-    ThreadArgs* lpThreadArgs = (ThreadArgs*)lparam;
-    SOCKET clientSocket = accept(lpThreadArgs->sock, reinterpret_cast<sockaddr*>(&addr), &addrLen);
+    SocketClientInfo socketClientInfo;
+    std::vector<SOCKET> clientSockets;
+    std::vector<std::string> clientIPs;
 
-    if (clientSocket == INVALID_SOCKET)
-    {
-        std::cerr << "accept() failed. Error: " << WSAGetLastError() << '\n';
-        //closesocket(lpThreadArgs->sock);
-        return FALSE;
+    fd_set master_set, read_set;
+    FD_ZERO(&master_set);
+    FD_SET(listeningSocket, &master_set);
+
+    while (true) {
+        read_set = master_set;
+
+        int activity = select(0, &read_set, nullptr, nullptr, nullptr);
+        if (activity == SOCKET_ERROR) {
+            std::cerr << "select() failed\n";
+            break;
+        }
+
+        // Check for new connections
+        if (FD_ISSET(listeningSocket, &read_set)) {
+            sockaddr_in clientAddr;
+            int addrlen = sizeof(clientAddr);
+
+            SOCKET clientSocket = accept(listeningSocket, (sockaddr*)&clientAddr, &addrlen);
+
+            if (clientSocket != INVALID_SOCKET) {
+                FD_SET(clientSocket, &master_set);
+                AgentConnection* agentCon = new AgentConnection(clientSocket);
+                arrAgentConnections.push_back(agentCon);
+                agentCon->GetSocketClientInfo(socketClientInfo);
+                std::cout << "[+] Connected to " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "\n";
+                PrintActiveSockets(arrAgentConnections);
+             
+            }
+        }
+
+        // Check for data or closed connections
+        for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
+            INT nBytesReceived;
+            AgentConnection* conn = *connectionsIterator;
+
+
+            if (FD_ISSET(conn->GetSocket(), &read_set)) {
+                char buffer[4096];
+                nBytesReceived = recv(conn->GetSocket(), buffer, sizeof(buffer) - 1, 0);
+                conn->GetSocketClientInfo(socketClientInfo);
+
+                if (nBytesReceived <= 0) {
+                    std::cout << "[+] Disonnected from " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "\n";
+                    FD_CLR(conn->GetSocket(), &master_set);
+
+                    delete conn;
+                    connectionsIterator = arrAgentConnections.erase(connectionsIterator);
+
+                    PrintActiveSockets(arrAgentConnections);
+                    continue;
+                }
+                else {
+                    buffer[nBytesReceived] = '\0';
+                    std::cout << "[Agent " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "] " << buffer << std::endl;
+                }
+            }
+
+            ++connectionsIterator;
+        }
+
     }
 
-    // To Agent
-    if (!lpThreadArgs->bIsToClient) {
-        AgentConnection* agentCon = new AgentConnection(clientSocket);
-        agentCon->SendCommand("echo hello");
-        std::string resp = agentCon->ReceiveData();
-        std::cout << "[+] Got response: " << resp << "\n";
-        delete agentCon;
-    }
-    
+
+    //SOCKET clientSocket = accept(lpThreadArgs->sock, reinterpret_cast<sockaddr*>(&addr), &addrLen);
+
+    //if (clientSocket == INVALID_SOCKET)
+    //{
+    //    std::cerr << "accept() failed. Error: " << WSAGetLastError() << '\n';
+    //    //closesocket(lpThreadArgs->sock);
+    //    return FALSE;
+    //}
+
+    //GetSocketClientInfo(addr, socketClientInfo);
+    //std::cout << "[+] Connected to " << socketClientInfo.szIp << ":" << socketClientInfo.nPort << "\n";
+
+    //// To Agent
+    //if (!lpThreadArgs->bIsToController) {
+    //    AgentConnection* agentCon = new AgentConnection(clientSocket);
+    //    agentCon->SendCommand("echo hello");
+    //    std::string resp = agentCon->ReceiveData();
+    //    std::cout << "[+] Got response: " << resp << "\n";
+    //    delete agentCon;
+    //}
+  
     return TRUE;
 }
 
 BOOL CreateSocket(INT port, SOCKET& outSocket) {
     outSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (outSocket == INVALID_SOCKET)
-        return false;
+        return FALSE;
 
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
@@ -50,35 +135,44 @@ BOOL CreateSocket(INT port, SOCKET& outSocket) {
 
 
 int main() {
-    HANDLE threads[2];
     WSADATA wsaData;
-
-    ThreadArgs* argsArray = new ThreadArgs[2];
+    SOCKET arrListeningSockets[2];
+    std::thread arrThreads[2];
+    std::vector<AgentConnection*> arrAgentConnections;
+    
+    //ThreadArgs* argsArray = new ThreadArgs[2];
 
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::cerr << "WSAStartup failed\n";
         return 1;
     }
 
-    CreateSocket(3000, argsArray[0].sock);
-    CreateSocket(3001, argsArray[1].sock);
-
-    argsArray[0].bIsToClient = TRUE;
-    argsArray[1].bIsToClient = FALSE;
+    CreateSocket(3000,arrListeningSockets[0]);
+    CreateSocket(3001, arrListeningSockets[1]);
 
     // Start listener threads
-    threads[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ListenForTcpPort , (LPVOID)&argsArray[0], 0, NULL);
-    threads[1] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ListenForTcpPort, (LPVOID)&argsArray[1], 0, NULL);
+    arrThreads[1] = std::thread(ListenForTcpPort, 3001, std::ref(arrListeningSockets[1]), std::ref(arrAgentConnections));
+    //threads[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ListenForTcpPort , (LPVOID)&argsArray[0], 0, NULL);
+    //threads[1] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ListenForTcpPort, (LPVOID)&argsArray[1], 0, NULL);
 
     std::cout << "[+] Listening for clients on port 3000\n";
     std::cout << "[+] Listening for agents on port 3001\n";
 
-    // Wait for threads (infinite)
-    WaitForMultipleObjects(2, threads, TRUE, INFINITE);
+    /*AgentConnection* a = new AgentConnection(arrListeningSockets[1]);
+    SocketClientInfo info;
+    a->GetSocketClientInfo(info);
+    std::cout << "[+] Listening for agents on port " << info.nPort << "\n";*/
 
-    closesocket(argsArray[0].sock);
-    closesocket(argsArray[1].sock);
-    delete[] argsArray;
+    // Wait for threads (infinite)
+    arrThreads[1].join();
+    //WaitForMultipleObjects(1, &threads[1], TRUE, INFINITE);
+
+
+    closesocket(arrListeningSockets[0]);
+    for (AgentConnection* conn : arrAgentConnections) {
+        delete conn;
+    }
+    //closesocket(arrListeningSockets[1]);
     WSACleanup();
 
     return 0;

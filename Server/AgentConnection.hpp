@@ -8,5 +8,4 @@ public:
 
     BOOL SendCommand(const std::string& command) override;
     std::string ReceiveData() override;
-
 };

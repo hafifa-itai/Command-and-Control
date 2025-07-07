@@ -3,8 +3,8 @@
 AgentConnection::AgentConnection(SOCKET agentSocket)
     : Connection(agentSocket) {}
 
-AgentConnection::~AgentConnection() {
 
+AgentConnection::~AgentConnection() {
 }
 
 BOOL AgentConnection::SendCommand(const std::string& command) {
@@ -17,6 +17,7 @@ std::string AgentConnection::ReceiveData() {
     if (socket == INVALID_SOCKET) return "";
     char buffer[4096];
     int received = recv(socket, buffer, sizeof(buffer) - 1, 0);
+
     if (received > 0) {
         buffer[received] = '\0';
         return std::string(buffer);
