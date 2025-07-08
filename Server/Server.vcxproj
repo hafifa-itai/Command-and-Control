@@ -128,14 +128,17 @@
   <ItemGroup>
     <ClCompile Include="AgentConnection.cpp" />
     <ClCompile Include="Connection.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="Server.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Server1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AgentConnection.hpp" />
     <ClInclude Include="Connection.hpp" />
     <ClInclude Include="Server.hpp" />
+    <ClInclude Include="Server1.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

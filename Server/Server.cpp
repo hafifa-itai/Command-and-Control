@@ -25,11 +25,7 @@ VOID PrintActiveSockets(std::vector<AgentConnection*>& arrAgentConnections) {
 
 BOOL ListenForTcpPort(INT nPort, SOCKET listeningSocket, std::vector<AgentConnection*>& arrAgentConnections)
 {
-    sockaddr_in addr{};
-    INT addrLen = sizeof(addr);
     SocketClientInfo socketClientInfo;
-    std::vector<SOCKET> clientSockets;
-    std::vector<std::string> clientIPs;
 
     fd_set master_set, read_set;
     FD_ZERO(&master_set);
@@ -140,7 +136,7 @@ BOOL CreateSocket(INT port, SOCKET& outSocket) {
 }
 
 
-int main() {
+int main1() {
     WSADATA wsaData;
     SOCKET arrListeningSockets[2];
     std::thread arrThreads[2];

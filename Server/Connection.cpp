@@ -16,3 +16,12 @@ VOID Connection::GetSocketClientInfo(SocketClientInfo& outSocketClientInfo) {
         outSocketClientInfo.szIp = "";
     }
 }
+
+std::string Connection::GetSocketStr() {
+    SOCKET socket = this->GetSocket();
+    SocketClientInfo socketClientInfo;
+    this->GetSocketClientInfo(socketClientInfo);
+    std::ostringstream oss;
+    oss << socketClientInfo.szIp << ":" << socketClientInfo.nPort;
+    return oss.str();
+}

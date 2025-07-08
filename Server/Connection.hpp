@@ -27,7 +27,8 @@ public:
     }
 
     VOID GetSocketClientInfo(SocketClientInfo& outSocketClientInfo);
-
+    std::string GetSocketStr();
+    VOID PrintActiveSockets();
 
     virtual BOOL SendCommand(const std::string& command) = 0;
     virtual std::string ReceiveData() = 0;
