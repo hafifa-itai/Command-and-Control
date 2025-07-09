@@ -10,3 +10,8 @@
 #include <sstream>
 #include <conio.h>
 #include <mutex>
+#include <unordered_map>
+#include <algorithm>
+
+
+#pragma comment(lib, "Ws2_32.lib")

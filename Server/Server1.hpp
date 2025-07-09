@@ -3,8 +3,9 @@
 #include "Libraries.hpp"
 #include "MyData.hpp"
 #include "AgentConnection.hpp"
+#include "GroupManager.hpp"
 
-#pragma comment(lib, "Ws2_32.lib")
+
 
 class Server1 {
 public:
@@ -37,6 +38,7 @@ private:
 	fd_set masterSet;
 	fd_set readSet;
 	BOOL bIsRunning;
+	GroupManager groupManager;
 
 	mutable std::mutex mAgentConnectionsMutex;
 	mutable std::mutex mControllerConnectionsMutex;

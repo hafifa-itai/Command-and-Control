@@ -70,7 +70,7 @@ BOOL ListenForTcpPort(INT nPort, SOCKET listeningSocket, std::vector<AgentConnec
                 conn->GetSocketClientInfo(socketClientInfo);
 
                 if (nBytesReceived <= 0) {
-                    std::cout << "[-] Disonnected from " << GetSocketStr(socketClientInfo) << "\n";
+                    std::cout << "[-] Disconnected from " << GetSocketStr(socketClientInfo) << "\n";
                     FD_CLR(conn->GetSocket(), &master_set);
 
                     delete conn;

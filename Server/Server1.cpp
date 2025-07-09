@@ -16,6 +16,7 @@ INT Server1::StartServer() {
 
     // Start listener threads
     bIsRunning = TRUE;
+    groupManager.CreateGroup("default1");
 
     arrThreads[1] = std::thread([this, arrListeningSockets] {
         this->ListenForTcpPort(3001, arrListeningSockets[1]);
@@ -148,9 +149,7 @@ BOOL Server1::ListenForTcpPort(INT nPort, SOCKET listeningSocket)
                 ++connectionsIterator;
             }
         }
-
         lock.unlock();
-        //Sleep(100);
     }
 
     return TRUE;
@@ -169,10 +168,14 @@ VOID Server1::AddAgentConnection(SOCKET socket) {
     AddSocketToMaster(socket);
     std::cout << "[+] Connected to " << agentCon->GetSocketStr() << "\n";
     PrintActiveAgentSockets();
+    groupManager.AddConnectionToGroup("default1", agentCon);
+    groupManager.AddConnectionToGroup("default2", agentCon);
 }
 
 std::vector<AgentConnection*>::iterator Server1::RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator) {
     RemoveSocketFromSet((*connectionIterator)->GetSocket());
+    groupManager.RemoveConnectionFromGroup("default1", *connectionIterator);
+    groupManager.RemoveConnectionFromGroup("default2", *connectionIterator);
     delete *connectionIterator;
     auto iterator = arrAgentConnections.erase(connectionIterator);
     PrintActiveAgentSockets();
