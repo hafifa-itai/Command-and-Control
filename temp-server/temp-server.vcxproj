@@ -127,7 +127,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Server\MyServer.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="TcpServer.cpp" />
     <ClCompile Include="tempserver.cpp" />
