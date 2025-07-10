@@ -15,10 +15,19 @@ public:
 
 	INT StartServer();
 	std::vector<AgentConnection*> GetAgentConnections() const;
+	BOOL CreateListeningSocket(INT port, SOCKET& outSocket);
 	BOOL ListenForTcpPort(INT nPort, SOCKET listeningSocket);
 	VOID AddAgentConnection(SOCKET socket);
 	std::vector<AgentConnection*>::iterator RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator);
 	VOID PrintActiveAgentSockets();
+	std::vector<AgentConnection*>::iterator FindConnectionFromSocketStr(std::string szSocket);
+	VOID RemoveConnectionFromAllGroups(AgentConnection* conn);
+
+	// Functions to handle user input
+	VOID HandleUserInput();
+	VOID UserCloseConnection(std::string szSocket);
+	VOID UserRunCommand(const std::vector<std::string>& parameters);
+	VOID UserShowMan();
 
 	// Functions to handle socket fd_sets:
 	fd_set GetMasterSet();
@@ -29,8 +38,6 @@ public:
 	INT WaitForSocketRead();
 	BOOL IsSocketInSet(SOCKET socket);
 	VOID RemoveSocketFromSet(SOCKET socket);
-
-	static BOOL CreateListeningSocket(INT port, SOCKET& outSocket);
 
 private:
 	std::vector<AgentConnection*> arrAgentConnections;

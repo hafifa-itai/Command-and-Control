@@ -10,16 +10,19 @@ BOOL GroupManager::CreateGroup(std::string szGroupName) {
 VOID GroupManager::AddConnectionToGroup(std::string szGroupName, AgentConnection* lpAgentConnection) {
 	std::lock_guard<std::mutex> lock(mGroupMapMutex);
 	groupMap[szGroupName].push_back(lpAgentConnection);
+	lpAgentConnection->AddToGroup(szGroupName);
 }
 
 BOOL GroupManager::RemoveConnectionFromGroup(std::string szGroupName, AgentConnection* lpAgentConnection) {
 	std::lock_guard<std::mutex> lock(mGroupMapMutex);
-	if (groupMap.count(szGroupName)) {
-		auto& connectionGroup = groupMap[szGroupName];
-		auto connectionIterator = std::find(connectionGroup.begin(), connectionGroup.end(), lpAgentConnection);
 
-		if (connectionIterator != connectionGroup.end()) {
-			connectionGroup.erase(connectionIterator);
+	if (groupMap.count(szGroupName)) {
+		auto& connectionsGroup = groupMap[szGroupName];
+		auto connectionIterator = std::find(connectionsGroup.begin(), connectionsGroup.end(), lpAgentConnection);
+
+		if (connectionIterator != connectionsGroup.end()) {
+			(*connectionIterator)->RemoveFromGroup(szGroupName);
+			connectionsGroup.erase(connectionIterator);
 			return TRUE;
 		}
 		else {
@@ -27,5 +30,28 @@ BOOL GroupManager::RemoveConnectionFromGroup(std::string szGroupName, AgentConne
 			return FALSE;
 		}
 	}
-	return TRUE;
+	return FALSE;
 }
+
+BOOL GroupManager::ListGroupMembers(std::string szGroupName) {
+	std::lock_guard<std::mutex> lock(mGroupMapMutex);
+
+	if (groupMap.count(szGroupName)) {
+		auto connectionsGroup = groupMap[szGroupName];
+		if (connectionsGroup.size()) {
+			std::cout << "[*] Group " << szGroupName << " active connections:\n";
+			for (AgentConnection* conn : connectionsGroup) {
+				std::cout << "[*] " << conn->GetSocketStr() << "\n";
+			}
+
+			return TRUE;
+		}
+		else {
+			std::cout << "[*] Group " << szGroupName << " is empty\n";
+			return FALSE;
+		}
+	}
+
+	return FALSE;
+}
+

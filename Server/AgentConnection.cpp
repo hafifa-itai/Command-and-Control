@@ -25,6 +25,25 @@ std::string AgentConnection::ReceiveData() {
     return "";
 }
 
+
+VOID AgentConnection::AddToGroup(std::string szGroupName) {
+    arrGroups.push_back(szGroupName);
+}
+
+VOID AgentConnection::RemoveFromGroup(std::string szGroupName)
+{
+    auto groupsIterator = std::find(arrGroups.begin(), arrGroups.end(), szGroupName);
+    if (groupsIterator != arrGroups.end()) {
+        arrGroups.erase(groupsIterator);
+    }
+}
+
+std::vector<std::string> AgentConnection::GetGroups()
+{
+    return arrGroups;
+}
+
+
 //BOOL AgentConnection::IsConnectionAlive() const {
 //    return socket != INVALID_SOCKET;
 //}

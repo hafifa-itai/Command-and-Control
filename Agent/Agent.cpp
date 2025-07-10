@@ -22,7 +22,7 @@ int main() {
     WSADATA wsaData;
     SOCKET sock = INVALID_SOCKET;
     sockaddr_in serverAddr = {};
-    const char* server_ip = "192.168.20.5";
+    const char* server_ip = "127.0.0.1";
     const int server_port = 3001;
 
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {

