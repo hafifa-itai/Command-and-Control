@@ -7,10 +7,10 @@ class GroupManager
 {
 public:
 	BOOL CreateGroup(std::string szGroupName);
-	VOID DeleteGroup(std::string szGroupName);
+	BOOL DeleteGroup(std::string szGroupName);
 	VOID AddConnectionToGroup(std::string szGroupName, AgentConnection* lpAgentConnection);
 	BOOL RemoveConnectionFromGroup(std::string szGroupName, AgentConnection* lpAgentConnection);
-	VOID BroadcastToGroup(std::string szCommand);
+	BOOL BroadcastToGroup(std::string szGroupName, std::string szCommand);
 	BOOL ListGroupMembers(std::string szGroupName);
 
 private:

@@ -206,8 +206,9 @@ VOID Server1::HandleUserInput() {
         }
 
         // Output results
-        std::cout << "Command: " << command << "\n";
-        std::cout << "Parameters:\n";
+        //std::cout << "Command: " << command << "\n";
+        //std::cout << "Parameters:\n";
+
         for (const auto& p : parameters) {
             std::cout << "- " << p << "\n";
         }
@@ -217,7 +218,7 @@ VOID Server1::HandleUserInput() {
         }
         else if (command == "close") {
             if (parameters.size() != 1) {
-                std::cout << "Invalid parametrs for close command\n";
+                std::cout << "[!] Invalid parametrs for close command\n";
             }
             else {
                 UserCloseConnection(parameters[0]);
@@ -226,12 +227,21 @@ VOID Server1::HandleUserInput() {
         else if (command == "cmd") {
             UserRunCommand(parameters);
         }
+        else if (command == "group-cmd") {
+            if (parameters.size() > 1) {
+                //groupManager.BroadcastToGroup(parameters);
+                UserRunCommandOnGroup(parameters);
+            }
+            else {
+                std::cout << "[!] Invalid parametrs for group-create command\n";
+            }
+        }
         else if (command == "group-create") {
             if (parameters.size() == 1) {
                 groupManager.CreateGroup(parameters[0]);
             }
             else {
-                std::cout << "Invalid parametrs for group-create command\n";
+                std::cout << "[!] Invalid parametrs for group-create command\n";
             }
         }
         else if (command == "group-add") {
@@ -240,7 +250,7 @@ VOID Server1::HandleUserInput() {
                 groupManager.AddConnectionToGroup(parameters[0], conn);
             }
             else {
-                std::cout << "Invalid parametrs for group-add command\n";
+                std::cout << "[!] Invalid parametrs for group-add command\n";
             }
         }
         else if (command == "group-list") {
@@ -248,13 +258,21 @@ VOID Server1::HandleUserInput() {
                 groupManager.ListGroupMembers(parameters[0]);
             }
             else {
-                std::cout << "Invalid parametrs for group-list command\n";
+                std::cout << "[!] Invalid parametrs for group-list command\n";
+            }
+        }
+        else if (command == "group-delete") {
+            if (parameters.size() == 1) {
+                groupManager.DeleteGroup(parameters[0]);
+            }
+            else {
+                std::cout << "[!] Invalid parametrs for group-delete command\n";
             }
         }
         else if (command == "man") {
             UserShowMan();
         }
-        else {
+        else if (command != "") {
             std::cout << "[!] Unrecogzied command\n";
             UserShowMan();
         }
@@ -282,7 +300,6 @@ VOID Server1::UserRunCommand(const std::vector<std::string>& arrParameters) {
         return;
     }
 
-
     for (size_t i = 0; i < arrParameters.size() - 1; ++i) {
         szCommand += arrParameters[i];
         if (i < arrParameters.size() - 2)
@@ -301,6 +318,23 @@ VOID Server1::UserRunCommand(const std::vector<std::string>& arrParameters) {
         (*connectionsIterator)->SendCommand(szCommand);
     }
 
+}
+
+VOID Server1::UserRunCommandOnGroup(const std::vector<std::string>& arrParameters)
+{
+    std::string szGroupName = arrParameters[0];
+    std::string szCommand;
+
+
+    for (size_t i = 1; i < arrParameters.size(); ++i) {
+        szCommand += arrParameters[i];
+        if (i < arrParameters.size() - 1) {
+            szCommand += " ";
+        }
+    }
+
+    groupManager.BroadcastToGroup(szGroupName, szCommand);
+    
 }
 
 

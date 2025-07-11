@@ -27,6 +27,7 @@ public:
 	VOID HandleUserInput();
 	VOID UserCloseConnection(std::string szSocket);
 	VOID UserRunCommand(const std::vector<std::string>& parameters);
+	VOID UserRunCommandOnGroup(const std::vector<std::string>& arrParameters);
 	VOID UserShowMan();
 
 	// Functions to handle socket fd_sets:

@@ -129,6 +129,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Agent.cpp" />
+    <ClCompile Include="PowerShellSession.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PowerShellSession.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

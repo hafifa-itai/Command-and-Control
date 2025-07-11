@@ -6,6 +6,22 @@ BOOL GroupManager::CreateGroup(std::string szGroupName) {
 	return result.second;
 }
 
+BOOL GroupManager::DeleteGroup(std::string szGroupName)
+{
+	std::lock_guard<std::mutex> lock(mGroupMapMutex);
+
+	if (groupMap.count(szGroupName)) {
+		auto& connectionsGroup = groupMap[szGroupName];
+		
+		for (AgentConnection* conn : connectionsGroup) {
+			conn->RemoveFromGroup(szGroupName);
+		}
+
+		groupMap.erase(szGroupName);
+	}
+	return FALSE;
+}
+
 
 VOID GroupManager::AddConnectionToGroup(std::string szGroupName, AgentConnection* lpAgentConnection) {
 	std::lock_guard<std::mutex> lock(mGroupMapMutex);
@@ -30,6 +46,28 @@ BOOL GroupManager::RemoveConnectionFromGroup(std::string szGroupName, AgentConne
 			return FALSE;
 		}
 	}
+	return FALSE;
+}
+
+BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szCommand)
+{
+	std::lock_guard<std::mutex> lock(mGroupMapMutex);
+
+	if (groupMap.count(szGroupName)) {
+		auto connectionsGroup = groupMap[szGroupName];
+		if (connectionsGroup.size()) {
+			for (AgentConnection* conn : connectionsGroup) {
+				conn->SendCommand(szCommand);
+			}
+
+			return TRUE;
+		}
+		else {
+			std::cout << "[*] Group " << szGroupName << " is empty\n";
+			return FALSE;
+		}
+	}
+
 	return FALSE;
 }
 
