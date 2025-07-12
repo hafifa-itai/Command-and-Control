@@ -7,7 +7,7 @@ public:
     ~AgentConnection() override;
 
     BOOL SendCommand(const std::string& command) override;
-    std::string ReceiveData() override;
+    BOOL ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer) override;
 
     VOID AddToGroup(std::string szGroupName);
     VOID RemoveFromGroup(std::string szGroupName);

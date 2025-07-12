@@ -13,16 +13,26 @@ BOOL AgentConnection::SendCommand(const std::string& command) {
     return sent == command.size();
 }
 
-std::string AgentConnection::ReceiveData() {
-    if (socket == INVALID_SOCKET) return "";
-    char buffer[4096];
-    int received = recv(socket, buffer, sizeof(buffer) - 1, 0);
+BOOL AgentConnection::ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer) {
+    INT iBytesReceived;
+    CHAR carrBuffer[4096];
 
-    if (received > 0) {
-        buffer[received] = '\0';
-        return std::string(buffer);
+    if (socket == INVALID_SOCKET) {
+        return FALSE;
     }
-    return "";
+
+    iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, MSG_PEEK & bIsPeekingData);
+
+    if (iBytesReceived > 0) {
+        if (!bIsPeekingData) {
+            carrBuffer[iBytesReceived] = '\0';
+            szoutBuffer = carrBuffer;
+        }
+
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 

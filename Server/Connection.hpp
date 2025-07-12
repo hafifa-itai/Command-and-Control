@@ -30,7 +30,7 @@ public:
     std::string GetSocketStr();
 
     virtual BOOL SendCommand(const std::string& command) = 0;
-    virtual std::string ReceiveData() = 0;
+    virtual BOOL ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer) = 0;
 
 protected:
     SOCKET socket;
