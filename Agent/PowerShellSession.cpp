@@ -14,13 +14,16 @@
 
 PowerShellSession::PowerShellSession()
 {
+    BOOL bIsPsCreated;
     SECURITY_ATTRIBUTES saAttr{};
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
 
-    HANDLE hChildStdoutReadTmp, hChildStdoutWrite;
-    HANDLE hChildStdinRead, hChildStdinWriteTmp;
+    HANDLE hChildStdoutWrite;
+    HANDLE hChildStdinRead;
+    HANDLE hChildStdinWriteTmp;
+    HANDLE hChildStdoutReadTmp;
 
     // Create pipes for stdout
     CreatePipe(&hChildStdoutReadTmp, &hChildStdoutWrite, &saAttr, 0);
@@ -39,10 +42,20 @@ PowerShellSession::PowerShellSession()
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
     // Create PowerShell process
-    char cmd[] = "powershell.exe -NoLogo -NoExit -Command -";
-    if (!CreateProcessA(
-        NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL,
-        &siStartInfo, &piProcInfo)) {
+    CHAR carrCommand[] = "powershell.exe -NoLogo -NoExit -Command -";
+    bIsPsCreated = CreateProcessA(
+        NULL,
+        carrCommand,
+        NULL,
+        NULL, TRUE,
+        CREATE_NO_WINDOW,
+        NULL,
+        NULL,
+        &siStartInfo,
+        &piProcInfo
+    );
+
+    if (!bIsPsCreated) {
         std::cerr << "Failed to start PowerShell.\n";
         exit(1);
     }
@@ -57,146 +70,119 @@ PowerShellSession::PowerShellSession()
 
 PowerShellSession::~PowerShellSession()
 {
-    if (hChildStdoutRead) CloseHandle(hChildStdoutRead);
-    if (hChildStdinWrite) CloseHandle(hChildStdinWrite);
+    if (hChildStdoutRead) {
+        CloseHandle(hChildStdoutRead);
+    }
+
+    if (hChildStdinWrite) {
+        CloseHandle(hChildStdinWrite);
+    }
+
     if (piProcInfo.hProcess) {
         TerminateProcess(piProcInfo.hProcess, 0);
         CloseHandle(piProcInfo.hProcess);
     }
-    if (piProcInfo.hThread) CloseHandle(piProcInfo.hThread);
+    if (piProcInfo.hThread) {
+        CloseHandle(piProcInfo.hThread);
+    }
 }
 
 std::string PowerShellSession::generateUniqueMarker() {
-    static std::random_device rd; // Seed for random number generator
-    static std::mt19937_64 gen(rd()); // Mersenne Twister engine
-    std::uniform_int_distribution<unsigned long long> distrib; // Distribution for unsigned long long
+    static std::random_device rndRandomSeed;
+    static std::mt19937_64 generator(rndRandomSeed());
+    std::uniform_int_distribution<unsigned long long> randomessDistribution;
+    std::string szRandomStr = std::to_string(randomessDistribution(generator));
+    std::string szUniqueTimeStamp = std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 
-    // Combine a random number with a high-resolution timestamp for uniqueness
-    return "END_OF_CMD_MARKER_" + std::to_string(distrib(gen)) + "_" +
-        std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::high_resolution_clock::now().time_since_epoch()).count());
+    return "END_OF_CMD_MARKER_" + szRandomStr + "_" + szUniqueTimeStamp;
 }
 
 
-std::string PowerShellSession::RunCommand(const std::string& cmd)
+std::string PowerShellSession::CleanOutput(std::string& szOutputBuffer, const std::string& szUniqueMarker, size_t markerPos)
 {
-    // Basic validation of pipe handles
-    if (!hChildStdinWrite || !hChildStdoutRead || hChildStdinWrite == INVALID_HANDLE_VALUE || hChildStdoutRead == INVALID_HANDLE_VALUE) {
-        throw std::runtime_error("PowerShell session is not initialized or pipe handles are invalid.");
+    size_t lastNonWhitespace;
+    std::string szFinalOutput;
+
+    szFinalOutput = szOutputBuffer.substr(0, markerPos);
+
+    lastNonWhitespace = szFinalOutput.find_last_not_of(" \t\n\r");
+
+    if (std::string::npos != lastNonWhitespace) {
+        szFinalOutput = szFinalOutput.substr(0, lastNonWhitespace + 1);
+    }
+    else {
+        szFinalOutput.clear();
     }
 
-    // Generate a unique marker to signify the end of the command's output
-    std::string uniqueMarker = generateUniqueMarker();
+    return szFinalOutput;
+}
 
-    // Construct the full command to send to PowerShell's stdin:
-    // 1. The actual command (`cmd`)
-    // 2. A newline character (`\n`) to execute the command
-    // 3. A PowerShell command to print our unique marker to stdout (`Write-Host`)
-    // 4. Another newline character (`\n`) to execute the marker command
-    std::string fullCommand = cmd + "\nWrite-Host '" + uniqueMarker + "'\n";
 
-    DWORD dwWritten;
-    // Write the full command string to PowerShell's standard input pipe
-    if (!WriteFile(hChildStdinWrite, fullCommand.c_str(), fullCommand.length(), &dwWritten, NULL)) {
-        // If WriteFile fails with ERROR_NO_DATA, it means the pipe has been closed,
-        // likely because PowerShell exited unexpectedly.
+std::string PowerShellSession::RunCommand(const std::string& szCommandmd)
+{
+    BOOL bIsReadSuccess;
+    BOOL bIsWriteSuccess;
+    BOOL bIsPipeAvailable;
+    CHAR carrReadBuffer[4096];
+    DWORD dwBytesRead;
+    DWORD dwBytesWritten;
+    std::string szOutputBuffer;
+    std::string szUniqueMarker = generateUniqueMarker();
+    std::string fullCommand = szCommandmd + "\nWrite-Host '" + szUniqueMarker + "'\n";
+
+    bIsWriteSuccess = WriteFile(
+        hChildStdinWrite,
+        fullCommand.c_str(),
+        fullCommand.length(),
+        &dwBytesWritten,
+        NULL
+    );
+
+    if (!bIsWriteSuccess) {
         if (GetLastError() == ERROR_NO_DATA) {
             throw std::runtime_error("Failed to write to PowerShell stdin: Pipe is broken. PowerShell might have exited.");
         }
         throw std::runtime_error("Failed to write to PowerShell stdin: " + std::to_string(GetLastError()));
     }
 
-    std::string outputBuffer; // Accumulates all output read from the pipe
-    CHAR chBuf[4096];         // Buffer for reading chunks of data
-    DWORD dwRead;
-    BOOL bSuccess = FALSE;
+    while (TRUE) {
+        bIsPipeAvailable = PeekNamedPipe(
+            hChildStdoutRead,
+            NULL,
+            0,
+            NULL,
+            NULL,
+            NULL
+        );
 
-    // Loop to continuously read from PowerShell's stdout pipe until the unique marker is found
-    while (true) {
-        DWORD bytesAvailable = 0;
-        // PeekNamedPipe checks if data is available in the pipe without blocking.
-        if (!PeekNamedPipe(hChildStdoutRead, NULL, 0, NULL, &bytesAvailable, NULL)) {
-            // Error peeking pipe. If ERROR_BROKEN_PIPE, PowerShell has likely terminated.
-            if (GetLastError() == ERROR_BROKEN_PIPE) {
-                throw std::runtime_error("PowerShell stdout pipe broken. PowerShell might have exited unexpectedly.");
-            }
+        if (!bIsPipeAvailable) {
             throw std::runtime_error("Failed to peek PowerShell stdout pipe: " + std::to_string(GetLastError()));
         }
 
-        if (bytesAvailable == 0) {
-            // No data immediately available. Check if the PowerShell process is still active.
-            DWORD exitCode;
-            if (GetExitCodeProcess(piProcInfo.hProcess, &exitCode) && exitCode != STILL_ACTIVE) {
-                // PowerShell process has exited, and no more data in the pipe.
-                // This indicates an unexpected termination.
-                std::cerr << "Warning: PowerShell process exited prematurely while waiting for marker. Exit Code: " << exitCode << std::endl;
-                break; // Exit the read loop
-            }
-            // Process is still active, but no data. Wait a short time before retrying.
-            Sleep(50); // Sleep for 50 milliseconds to prevent busy-waiting
-            continue;
+        bIsReadSuccess = ReadFile(
+            hChildStdoutRead,
+            carrReadBuffer,
+            sizeof(carrReadBuffer) - 1,
+            &dwBytesRead,
+            NULL
+        );
+
+        if (!bIsReadSuccess || dwBytesRead == 0) {
+            throw std::runtime_error("Failed to read from PowerShell stdout: " + std::to_string(GetLastError()));
+            break;
         }
 
-        // Data is available, proceed to read it
-        bSuccess = ReadFile(hChildStdoutRead, chBuf, sizeof(chBuf) - 1, &dwRead, NULL);
-        if (!bSuccess || dwRead == 0) {
-            // Read error or end of pipe (pipe closed by writer).
-            if (GetLastError() == ERROR_BROKEN_PIPE || dwRead == 0) {
-                std::cerr << "Warning: PowerShell stdout pipe broken or closed unexpectedly." << std::endl;
-            }
-            else {
-                throw std::runtime_error("Failed to read from PowerShell stdout: " + std::to_string(GetLastError()));
-            }
-            break; // Exit the read loop
-        }
+        carrReadBuffer[dwBytesRead] = '\0';
+        szOutputBuffer.append(carrReadBuffer, dwBytesRead);
 
-        chBuf[dwRead] = '\0'; // Null-terminate the read buffer for string conversion
-        outputBuffer.append(chBuf, dwRead); // Append the read data to the accumulated buffer
+        size_t markerPos = szOutputBuffer.find(szUniqueMarker);
 
-        // Check if the unique marker is present in the accumulated output.
-        size_t markerPos = outputBuffer.find(uniqueMarker);
         if (markerPos != std::string::npos) {
-            // Marker found! This signifies the end of the command's output.
-            // The actual output is everything before the marker.
-            std::string finalOutput = outputBuffer.substr(0, markerPos);
-
-            // Trim trailing whitespace and newline characters from the output.
-            // PowerShell often adds extra newlines or spaces.
-            size_t lastNonWhitespace = finalOutput.find_last_not_of(" \t\n\r");
-            if (std::string::npos != lastNonWhitespace) {
-                finalOutput = finalOutput.substr(0, lastNonWhitespace + 1);
-            }
-            else {
-                // If only whitespace, clear it
-                finalOutput.clear();
-            }
-
-            // Clear the part of the outputBuffer that was just processed (up to and including the marker).
-            // This is crucial for a persistent session, as it leaves only the PowerShell prompt
-            // (or any subsequent output) for the next command.
-            size_t endOfMarkerLine = outputBuffer.find('\n', markerPos);
-            if (endOfMarkerLine != std::string::npos) {
-                outputBuffer = outputBuffer.substr(endOfMarkerLine + 1);
-            }
-            else {
-                // If marker is at the very end without a newline, clear entire buffer
-                outputBuffer.clear();
-            }
-
-            return finalOutput; // Return the extracted command output
+            return CleanOutput(szOutputBuffer, szUniqueMarker, markerPos);
         }
     }
 
-    // If the loop exits without finding the unique marker (e.g., PowerShell crashed or hung),
-    // print a warning and return whatever output was accumulated.
     std::cerr << "Warning: Unique marker not found in PowerShell output. Returning partial/full buffer." << std::endl;
-    // Trim any trailing whitespace from the partial output
-    size_t lastNonWhitespace = outputBuffer.find_last_not_of(" \t\n\r");
-    if (std::string::npos != lastNonWhitespace) {
-        outputBuffer = outputBuffer.substr(0, lastNonWhitespace + 1);
-    }
-    else {
-        outputBuffer.clear();
-    }
-    return outputBuffer;
+    return szOutputBuffer;
 }
