@@ -7,7 +7,7 @@ AgentConnection::AgentConnection(SOCKET agentSocket)
 AgentConnection::~AgentConnection() {
 }
 
-BOOL AgentConnection::SendCommand(const std::string& command) {
+BOOL AgentConnection::SendData(const std::string& command) {
     if (socket == INVALID_SOCKET) return false;
     int sent = send(socket, command.c_str(), static_cast<int>(command.size()), 0);
     return sent == command.size();

@@ -24,18 +24,16 @@ INT Server1::StartServer() {
     // Start listener threads
     bIsRunning = TRUE;
 
-    arrThreads[1] = std::thread([this, arrListeningSockets] {
-        this->ListenForTcpPort(3001, arrListeningSockets[1]);
-        });
+    arrThreads[0] = std::thread(&Server1::ListenForConnections, this, 3000, arrListeningSockets[0]);
+    arrThreads[1] = std::thread(&Server1::ListenForConnections, this ,3001, arrListeningSockets[1]);
 
     std::cout << "[+] Listening for clients on port 3000\n";
     std::cout << "[+] Listening for agents on port 3001\n";
 
     HandleUserInput();
 
+    arrThreads[0].join();
     arrThreads[1].join();
-
-    closesocket(arrListeningSockets[0]);
     WSACleanup();
 
     return 0;
@@ -65,19 +63,17 @@ BOOL Server1::CreateListeningSocket(INT port, SOCKET& outSocket) {
 }
 
 
-BOOL Server1::ListenForTcpPort(INT nPort, SOCKET listeningSocket)
+BOOL Server1::ListenForConnections(INT iPort, SOCKET listeningSocket)
 {
-    INT nAddrLen;
     INT nSocketReadResult;
-    sockaddr_in clientAddr;
+    INT iFdSetIndex = (iPort == AGENT_PORT) ? 1 : 0;
 
-    nAddrLen = sizeof(clientAddr);
-    InitMasterSet();
-    AddSocketToMaster(listeningSocket);
+    InitMasterSet(iFdSetIndex);
+    AddSocketToMaster(listeningSocket, iFdSetIndex);
 
     while (bIsRunning) {
-        SetReadSetAsMaster();
-        nSocketReadResult = WaitForSocketRead();
+        SetReadSetAsMaster(iFdSetIndex);
+        nSocketReadResult = WaitForSocketRead(iFdSetIndex);
 
         if (nSocketReadResult == SOCKET_ERROR) {
             std::cerr << "select() failed\n";
@@ -85,42 +81,98 @@ BOOL Server1::ListenForTcpPort(INT nPort, SOCKET listeningSocket)
         }
 
         // Check for new connections
-        if (IsSocketInSet(listeningSocket)) {
-            SOCKET clientSocket = accept(listeningSocket, (sockaddr*)&clientAddr, &nAddrLen);
+        AcceptNewConnections(listeningSocket, iFdSetIndex);
 
-            if (clientSocket != INVALID_SOCKET) {
+        // Check for closed connections
+        if (iPort == AGENT_PORT) {
+            CheckForClosedAgentConnections();
+        }
+        else {
+            CheckForControllerConnections();
+        }
+    }
+
+    return TRUE;
+}
+
+VOID Server1::AcceptNewConnections(SOCKET listeningSocket, INT iFdSetIndex)
+{
+    INT nAddrLen;
+    sockaddr_in clientAddr;
+    nAddrLen = sizeof(clientAddr);
+
+    if (IsSocketInSet(listeningSocket, iFdSetIndex)) {
+        SOCKET clientSocket = accept(listeningSocket, (sockaddr*)&clientAddr, &nAddrLen);
+
+        if (clientSocket != INVALID_SOCKET) {
+            if (iFdSetIndex == AGENT_INDEX)
+            {
                 AddAgentConnection(clientSocket);
             }
+            else {
+                AddControllerConnection(clientSocket);
+            }
         }
+    }
+}
 
-        // Check for data or closed connections
-        std::unique_lock<std::mutex> lock(mAgentConnectionsMutex);
 
-        for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
-            AgentConnection* conn = *connectionsIterator;
+VOID Server1::CheckForClosedAgentConnections()
+{
+    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
-            if (IsSocketInSet(conn->GetSocket())) {
-                std::string szData;
-                BOOL bIsConnectionAlive;
-                bIsConnectionAlive = conn->ReceiveData(TRUE, szData);
+    for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
+        AgentConnection* conn = *connectionsIterator;
 
-                if (!bIsConnectionAlive) {
-                    std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
-                    connectionsIterator = RemoveAgentConnection(connectionsIterator);
-                }
-                else {
-                    ++connectionsIterator;
-                }
+        if (IsSocketInSet(conn->GetSocket(), AGENT_INDEX)) {
+            std::string szData;
+            BOOL bIsConnectionAlive;
+            bIsConnectionAlive = conn->ReceiveData(TRUE, szData);
+
+            if (!bIsConnectionAlive) {
+                std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
+                connectionsIterator = RemoveAgentConnection(connectionsIterator);
             }
             else {
                 ++connectionsIterator;
             }
         }
-
-        lock.unlock();
+        else {
+            ++connectionsIterator;
+        }
     }
+}
 
-    return TRUE;
+
+VOID Server1::CheckForControllerConnections()
+{
+    std::lock_guard<std::mutex> lock(mControllerConnectionsMutex);
+
+    for (auto connectionsIterator = arrControllerConnections.begin(); connectionsIterator != arrControllerConnections.end();) {
+        ControllerConnection* conn = *connectionsIterator;
+
+        if (IsSocketInSet(conn->GetSocket(), CONTROLLER_INDEX)) {
+            std::string szData;
+            BOOL bIsConnectionAlive;
+            bIsConnectionAlive = conn->ReceiveData(FALSE, szData);
+
+            if (!bIsConnectionAlive) {
+                std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
+                connectionsIterator = RemoveControllerConnection(connectionsIterator);
+            }
+            else {
+                if (!szData.empty()) {
+                    std::cout << "[*] Received data:" << szData << " from " << conn->GetSocketStr() << " controller\n";
+                    HandleControllerCommand(szData, conn);
+                }
+
+                ++connectionsIterator;
+            }
+        }
+        else {
+            ++connectionsIterator;
+        }
+    }
 }
 
 
@@ -131,33 +183,97 @@ std::vector<AgentConnection*> Server1::GetAgentConnections() const {
 
 VOID Server1::AddAgentConnection(SOCKET socket) {
     //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
-    AgentConnection* agentCon = new AgentConnection(socket);
-    arrAgentConnections.push_back(agentCon);
-    AddSocketToMaster(socket);
-    std::cout << "[+] Connected to " << agentCon->GetSocketStr() << "\n";
-    PrintActiveAgentSockets();
+    AgentConnection* agentConn = new AgentConnection(socket);
+    arrAgentConnections.push_back(agentConn);
+    AddSocketToMaster(socket, AGENT_INDEX);
+    std::cout << "[+] Connected to " << agentConn->GetSocketStr() << " agent\n";
+    //PrintActiveAgentSockets();
+}
+
+VOID Server1::AddControllerConnection(SOCKET socket) {
+    //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+    ControllerConnection* controllerCon = new ControllerConnection(socket);
+    arrControllerConnections.push_back(controllerCon);
+    AddSocketToMaster(socket, CONTROLLER_INDEX);
+    std::cout << "[+] Connected to " << controllerCon->GetSocketStr() << " controller\n";
 }
 
 std::vector<AgentConnection*>::iterator Server1::RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator) {
     RemoveConnectionFromAllGroups(*connectionIterator);
-    RemoveSocketFromSet((*connectionIterator)->GetSocket());
+    RemoveSocketFromSet((*connectionIterator)->GetSocket(), AGENT_INDEX);
     delete *connectionIterator;
     auto iterator = arrAgentConnections.erase(connectionIterator);
-    PrintActiveAgentSockets();
+    //PrintActiveAgentSockets();
     return iterator;
 }
 
-VOID Server1::PrintActiveAgentSockets() {
-    if (arrAgentConnections.size() == 0) {
-        std::cout << "[+] No active sockets\n";
-    }
-    else {
-        std::cout << "[+] Active sockets:\n";
 
-        for (AgentConnection* conn : arrAgentConnections) {
-            std::cout << "[+] Connected to " << conn->GetSocketStr() << "\n";
+std::vector<ControllerConnection*>::iterator Server1::RemoveControllerConnection(std::vector<ControllerConnection*>::iterator& connectionIterator) {
+    RemoveSocketFromSet((*connectionIterator)->GetSocket(), CONTROLLER_INDEX);
+    delete* connectionIterator;
+    auto iterator = arrControllerConnections.erase(connectionIterator);
+    //PrintActiveAgentSockets();
+    return iterator;
+}
+
+VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* conn)
+{
+    BOOL bIsCommandSuccess;
+    std::string szResponse;
+    const nlohmann::json jsonData = nlohmann::json::parse(szData);
+    ControllerCommandReq controllerCommand = jsonData;
+    
+    if (controllerCommand.GetCommandType() == CommandType::Quit) {
+        bIsRunning = FALSE;
+        szResponse = "[*] Successfully killed server process\n";
+    }
+    else if (controllerCommand.GetCommandType() == CommandType::Close) {
+        bIsCommandSuccess = CloseConnection(controllerCommand.GetTargetAgent());
+
+        if (bIsCommandSuccess) {
+            szResponse = "[*] Successfully closed connection with " + conn->GetSocketStr() + "\n";
+        }
+        else {
+            szResponse = "[!] Error closing connection with " + conn->GetSocketStr() + "\n";
         }
     }
+    else if (controllerCommand.GetCommandType() == CommandType::List) {
+        szResponse = GetActiveAgentSockets();
+    }
+    else if (controllerCommand.GetCommandType() == CommandType::GroupAdd) {
+        AgentConnection* agentConn;
+        auto connectionIterator = FindConnectionFromSocketStr(controllerCommand.GetTargetAgent());
+
+        if (connectionIterator != arrAgentConnections.end()) {
+            agentConn = *connectionIterator;
+            groupManager.AddConnectionToGroup(controllerCommand.GetGroupName(), agentConn);
+            szResponse = "[*] Successfully added " + controllerCommand.GetTargetAgent() + " to " +
+                controllerCommand.GetGroupName() + " group\n";
+        }
+        else {
+            szResponse = "[!] Agent " + controllerCommand.GetTargetAgent() + " does not exist\n";
+        }
+    }
+
+    conn->SendData(szResponse);
+}
+
+
+std::string Server1::GetActiveAgentSockets() {
+    std::string szResult;
+
+    if (arrAgentConnections.size() == 0) {
+        szResult = "[+] No active sockets\n";
+    }
+    else {
+        szResult = "[+] Active sockets:\n";
+
+        for (AgentConnection* conn : arrAgentConnections) {
+            szResult += "[+] Connected to " + conn->GetSocketStr() + "\n";
+        }
+    }
+
+    return szResult;
 }
 
 
@@ -216,18 +332,17 @@ VOID Server1::HandleUserInput() {
                 std::cout << "[!] Invalid parametrs for close command\n";
             }
             else {
-                UserCloseConnection(parameters[0]);
+                CloseConnection(parameters[0]);
             }
         }
         else if (command == "cmd") {
             UserRunCommand(parameters);
         }
         else if (command == "list") {
-            PrintActiveAgentSockets();
+            std::cout << GetActiveAgentSockets();
         }
         else if (command == "group-cmd") {
             if (parameters.size() > 1) {
-                //groupManager.BroadcastToGroup(parameters);
                 UserRunCommandOnGroup(parameters);
             }
             else {
@@ -244,8 +359,16 @@ VOID Server1::HandleUserInput() {
         }
         else if (command == "group-add") {
             if (parameters.size() == 2) {
-                AgentConnection* conn = *FindConnectionFromSocketStr(parameters[1]);
-                groupManager.AddConnectionToGroup(parameters[0], conn);
+                std::vector<AgentConnection*>::iterator connectionIterator = FindConnectionFromSocketStr(parameters[1]);
+
+                if (connectionIterator != arrAgentConnections.end()) {
+                    AgentConnection* conn = *connectionIterator;
+                    groupManager.AddConnectionToGroup(parameters[0], conn);
+                }
+                else {
+                    std::cout << "[!] error!";
+                }
+
             }
             else {
                 std::cout << "[!] Invalid parametrs for group-add command\n";
@@ -279,13 +402,15 @@ VOID Server1::HandleUserInput() {
 }
 
 
-VOID Server1::UserCloseConnection(std::string szSocket) {
+BOOL Server1::CloseConnection(std::string szSocket) {
     auto connectionsIterator = FindConnectionFromSocketStr(szSocket);
     std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     if (connectionsIterator != arrAgentConnections.end()) {
         RemoveAgentConnection(connectionsIterator);
+        return TRUE;
     }
+    return FALSE;
 }
 
 
@@ -314,7 +439,7 @@ VOID Server1::UserRunCommand(const std::vector<std::string>& arrParameters) {
 
     if (connectionsIterator != arrAgentConnections.end()) {
         std::string szData;
-        (*connectionsIterator)->SendCommand(szCommand);
+        (*connectionsIterator)->SendData(szCommand);
         (*connectionsIterator)->ReceiveData(FALSE, szData);
         std::cout << "[*] received from " << (*connectionsIterator)->GetSocketStr() << " : \n" << szData << "\n";
     }
@@ -349,46 +474,47 @@ VOID Server1::UserShowMan() {
     std::cout << "[*] group-add GROUPNAME IP:PORT - Add IP:PORT to GROUPNAME control group\n";
     std::cout << "[*] group-remove GROUPNAME IP:PORT - Remove IP:PORT from GROUPNAME control group\n";
     std::cout << "[*] group-list GROUPNAME - Print the members of GROUPNAME control group\n";
+    std::cout << "[*] group-cmd GROUPNAME COMMAND - Execute COMMAND on members of GROUPNAME control group\n";
     std::cout << "[*] groups - Print all active control groups\n";
     std::cout << "[*] man - Show this man page\n";
 }
 
 
-fd_set Server1::GetMasterSet() {
-    return masterSet;
+fd_set Server1::GetMasterSet(INT iFdSetIndex) {
+    return masterSet[iFdSetIndex];
 }
 
-fd_set Server1::GetReadSet() {
-    return readSet;
+fd_set Server1::GetReadSet(INT iFdSetIndex) {
+    return readSet[iFdSetIndex];
 }
-VOID Server1::InitMasterSet() {
-    FD_ZERO(&masterSet);
-}
-
-
-VOID Server1::SetReadSetAsMaster() {
-    readSet = masterSet;
+VOID Server1::InitMasterSet(INT iFdSetIndex) {
+    FD_ZERO(&masterSet[iFdSetIndex]);
 }
 
 
-VOID Server1::AddSocketToMaster(SOCKET socket) {
-    FD_SET(socket, &masterSet);
+VOID Server1::SetReadSetAsMaster(INT iFdSetIndex) {
+    readSet[iFdSetIndex] = masterSet[iFdSetIndex];
 }
 
 
-INT Server1::WaitForSocketRead() {
+VOID Server1::AddSocketToMaster(SOCKET socket, INT iFdSetIndex) {
+    FD_SET(socket, &masterSet[iFdSetIndex]);
+}
+
+
+INT Server1::WaitForSocketRead(INT iFdSetIndex) {
     timeval timeout;
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
-    return select(0, &readSet, NULL, NULL, &timeout);
+    return select(0, &readSet[iFdSetIndex], NULL, NULL, &timeout);
 }
 
 
-BOOL Server1::IsSocketInSet(SOCKET socket) {
-    return FD_ISSET(socket, &readSet);
+BOOL Server1::IsSocketInSet(SOCKET socket, INT iFdSetIndex) {
+    return FD_ISSET(socket, &readSet[iFdSetIndex]);
 }
 
 
-VOID Server1::RemoveSocketFromSet(SOCKET socket) {
-    FD_CLR(socket, &masterSet);
+VOID Server1::RemoveSocketFromSet(SOCKET socket, INT iFdSetIndex) {
+    FD_CLR(socket, &masterSet[iFdSetIndex]);
 }

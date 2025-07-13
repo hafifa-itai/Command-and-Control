@@ -29,7 +29,7 @@ public:
     VOID GetSocketClientInfo(SocketClientInfo& outSocketClientInfo);
     std::string GetSocketStr();
 
-    virtual BOOL SendCommand(const std::string& command) = 0;
+    virtual BOOL SendData(const std::string& command) = 0;
     virtual BOOL ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer) = 0;
 
 protected:

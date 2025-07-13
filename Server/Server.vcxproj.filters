@@ -18,9 +18,6 @@
     <ClCompile Include="AgentConnection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Server.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Connection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -33,6 +30,9 @@
     <ClCompile Include="GroupManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ControllerConnection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AgentConnection.hpp">
@@ -41,13 +41,13 @@
     <ClInclude Include="Connection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Server.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Server1.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GroupManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ControllerConnection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
