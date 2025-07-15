@@ -1,15 +1,18 @@
 #pragma once
 
-#include "Libraries.hpp"
+#include "pch.h"
+#include "Constants.hpp"
 #include "ControllerConnection.hpp"
 #include "AgentConnection.hpp"
 #include "GroupManager.hpp"
+#include "ControllerCommandReq.hpp"
+
 
 class Server1 {
 public:
 	Server1() = default;
 	~Server1();
-
+	
 
 	INT StartServer();
 	std::vector<AgentConnection*> GetAgentConnections() const;

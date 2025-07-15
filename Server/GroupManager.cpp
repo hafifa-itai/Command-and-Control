@@ -18,7 +18,9 @@ BOOL GroupManager::DeleteGroup(std::string szGroupName)
 		}
 
 		groupMap.erase(szGroupName);
+		return TRUE;
 	}
+
 	return FALSE;
 }
 

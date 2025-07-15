@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36203.30
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcxproj", "{CC251B00-5863-49BF-AFD4-41CB8C6668DD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Controller", "Client\Client.vcxproj", "{CC251B00-5863-49BF-AFD4-41CB8C6668DD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "Server\Server.vcxproj", "{F40A6C4D-A004-4BA8-8D22-48F378E3713C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sharedClasses", "sharedClasses\sharedClasses.vcxitems", "{364F3DC0-2679-45E8-9114-C08D45B5A755}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Agent", "Agent\Agent.vcxproj", "{15288F53-C1C1-47E9-8FDB-22E8B402221B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SharedLib", "SharedLib\SharedLib.vcxproj", "{F404C5F9-EA29-4245-B9E8-5ED088C81D18}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,16 +43,19 @@ Global
 		{15288F53-C1C1-47E9-8FDB-22E8B402221B}.Release|x64.Build.0 = Release|x64
 		{15288F53-C1C1-47E9-8FDB-22E8B402221B}.Release|x86.ActiveCfg = Release|Win32
 		{15288F53-C1C1-47E9-8FDB-22E8B402221B}.Release|x86.Build.0 = Release|Win32
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Debug|x64.ActiveCfg = Debug|x64
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Debug|x64.Build.0 = Debug|x64
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Debug|x86.ActiveCfg = Debug|Win32
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Debug|x86.Build.0 = Debug|Win32
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Release|x64.ActiveCfg = Release|x64
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Release|x64.Build.0 = Release|x64
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Release|x86.ActiveCfg = Release|Win32
+		{F404C5F9-EA29-4245-B9E8-5ED088C81D18}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {37A769E6-CF05-4DB6-8F3F-60D58DD4DC91}
-	EndGlobalSection
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		sharedClasses\sharedClasses.vcxitems*{364f3dc0-2679-45e8-9114-c08d45b5a755}*SharedItemsImports = 9
-		sharedClasses\sharedClasses.vcxitems*{cc251b00-5863-49bf-afd4-41cb8c6668dd}*SharedItemsImports = 4
-		sharedClasses\sharedClasses.vcxitems*{f40a6c4d-a004-4ba8-8d22-48f378e3713c}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal

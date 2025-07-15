@@ -254,6 +254,28 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
             szResponse = "[!] Agent " + controllerCommand.GetTargetAgent() + " does not exist\n";
         }
     }
+    else if (controllerCommand.GetCommandType() == CommandType::GroupCreate) {
+        bIsCommandSuccess = groupManager.CreateGroup(controllerCommand.GetGroupName());
+
+        if (!bIsCommandSuccess) {
+            szResponse = "[!] Group " + controllerCommand.GetGroupName() + " already exists\n";
+        }
+        else
+        {
+            szResponse = "[*] Successfully created group " + controllerCommand.GetGroupName() + "\n";
+        }
+    }
+    else if (controllerCommand.GetCommandType() == CommandType::GroupDelete) {
+        bIsCommandSuccess = groupManager.DeleteGroup(controllerCommand.GetGroupName());
+
+        if (!bIsCommandSuccess) {
+            szResponse = "[!] Group " + controllerCommand.GetGroupName() + " doesn't exist\n";
+        }
+        else
+        {
+            szResponse = "[*] Successfully deleted group " + controllerCommand.GetGroupName() + "\n";
+        }
+    }
 
     conn->SendData(szResponse);
 }

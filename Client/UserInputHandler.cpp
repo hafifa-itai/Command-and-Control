@@ -28,7 +28,7 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
         }
         else if (command == "close") {
             if (parameters.size() != 1) {
-                std::cout << "[!] Invalid parametrs for close command\n";
+                std::cout << "[!] Invalid parameters for close command\n";
                 return ControllerCommandReq(CommandType::SyntaxError, "", "", "");
             }
             else {
@@ -46,7 +46,7 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
                 //return UserRunCommandOnGroup(parameters);
             }
             else {
-                std::cout << "[!] Invalid parametrs for group-create command\n";
+                std::cout << "[!] Invalid parameters for group-create command\n";
             }
         }
         else if (command == "group-create") {
@@ -54,7 +54,7 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
                 //return groupManager.CreateGroup(parameters[0]);
             }
             else {
-                std::cout << "[!] Invalid parametrs for group-create command\n";
+                std::cout << "[!] Invalid parameters for group-create command\n";
             }
         }
         else if (command == "group-add") {
@@ -64,7 +64,7 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
                 //groupManager.AddConnectionToGroup(parameters[0], conn);
             }
             else {
-                std::cout << "[!] Invalid parametrs for group-add command\n";
+                std::cout << "[!] Invalid parameters for group-add command\n";
             }
         }
         else if (command == "group-list") {
@@ -72,7 +72,7 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
                 //groupManager.ListGroupMembers(parameters[0]);
             }
             else {
-                std::cout << "[!] Invalid parametrs for group-list command\n";
+                std::cout << "[!] Invalid parameters for group-list command\n";
             }
         }
         else if (command == "group-delete") {
@@ -80,7 +80,7 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
                 //groupManager.DeleteGroup(parameters[0]);
             }
             else {
-                std::cout << "[!] Invalid parametrs for group-delete command\n";
+                std::cout << "[!] Invalid parameters for group-delete command\n";
             }
         }
         else if (command == "man") {
