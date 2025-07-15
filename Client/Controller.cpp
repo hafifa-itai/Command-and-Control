@@ -73,28 +73,10 @@ VOID Controller::HandleCommandObject(ControllerCommandReq commandReq)
     std::string szOutputBuffer;
     CommandType commandType = commandReq.GetCommandType();
 
-    if (commandType == CommandType::Quit) {
-        SendCommand(commandReq);
-        ReceiveData(szOutputBuffer);
-        std::cout << szOutputBuffer;
-    }
-
-    if (commandType == CommandType::Close) {
-        std::cout << "[!] close\n";
-        SendCommand(commandReq);
-        ReceiveData(szOutputBuffer);
-        std::cout << szOutputBuffer;
-    }
-
-    if (commandType == CommandType::List) {
-        std::cout << "[!] list\n";
-        SendCommand(commandReq);
-        ReceiveData(szOutputBuffer);
-        std::cout << szOutputBuffer;
-    }
-
-    if (commandType == CommandType::GroupAdd) {
-        std::cout << "[!] group-add\n";
+    if (commandType == CommandType::Close || commandType == CommandType::List || commandType == CommandType::GroupAdd ||
+        commandType == CommandType::GroupRemove || commandType == CommandType::GroupCreate || commandType == CommandType::GroupDelete ||
+        commandType == CommandType::ListGroup || commandType == CommandType::ListGroupNames || commandType == CommandType::Quit) 
+    {
         SendCommand(commandReq);
         ReceiveData(szOutputBuffer);
         std::cout << szOutputBuffer;
@@ -120,12 +102,12 @@ BOOL Controller::SendCommand(ControllerCommandReq commandReq)
         return FALSE;
     }
     szCommand = j.dump(4);
-    std::cout << szCommand << "\n";
+    //std::cout << szCommand << "\n";
     iBytesSent = send(sock, szCommand.c_str(), static_cast<int>(szCommand.size()), 0);
     return iBytesSent == szCommand.size();
 }
 
-BOOL Controller::ReceiveData(std::string& szoutBuffer) {
+BOOL Controller::ReceiveData(std::string& szOutBuffer) {
     INT iBytesReceived;
     CHAR carrBuffer[4096];
 
@@ -137,7 +119,7 @@ BOOL Controller::ReceiveData(std::string& szoutBuffer) {
 
     if (iBytesReceived > 0) {
         carrBuffer[iBytesReceived] = '\0';
-        szoutBuffer = carrBuffer;
+        szOutBuffer = carrBuffer;
     }
 
     return FALSE;

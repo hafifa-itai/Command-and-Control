@@ -76,25 +76,39 @@ BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szComma
 	return FALSE;
 }
 
-BOOL GroupManager::ListGroupMembers(std::string szGroupName) {
+BOOL GroupManager::ListGroupMembers(std::string szGroupName, std::string& szOutput) {
 	std::lock_guard<std::mutex> lock(mGroupMapMutex);
 
 	if (groupMap.count(szGroupName)) {
 		auto connectionsGroup = groupMap[szGroupName];
-		if (connectionsGroup.size()) {
-			std::cout << "[*] Group " << szGroupName << " active connections:\n";
-			for (AgentConnection* conn : connectionsGroup) {
-				std::cout << "[*] " << conn->GetSocketStr() << "\n";
-			}
 
-			return TRUE;
+		if (connectionsGroup.size()) {
+			szOutput += "[*] Group " + szGroupName + " active connections:\n";
+			for (AgentConnection* conn : connectionsGroup) {
+				szOutput += "[*] " + conn->GetSocketStr() + "\n";
+			}
 		}
 		else {
-			std::cout << "[*] Group " << szGroupName << " is empty\n";
-			return FALSE;
+			szOutput = "[*] Group " + szGroupName + " is empty\n";
 		}
+		
+		return TRUE;
 	}
 
+	szOutput = "[!] Group " + szGroupName + " doesn't exist\n";
 	return FALSE;
+}
+
+VOID GroupManager::GetGroupNames(std::string& szOutput)
+{
+	std::lock_guard<std::mutex> lock(mGroupMapMutex);
+	if (groupMap.empty()) {
+		szOutput = "[!] No groups found";
+	}
+	else {
+		for (const auto& keyPair : groupMap) {
+			szOutput += "[*] " + keyPair.first + "\n";
+		}
+	}
 }
 

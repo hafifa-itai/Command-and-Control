@@ -29,7 +29,6 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
         else if (command == "close") {
             if (parameters.size() != 1) {
                 std::cout << "[!] Invalid parameters for close command\n";
-                return ControllerCommandReq(CommandType::SyntaxError, "", "", "");
             }
             else {
                 return ControllerCommandReq(CommandType::Close, parameters[0], "", "");
@@ -46,12 +45,12 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
                 //return UserRunCommandOnGroup(parameters);
             }
             else {
-                std::cout << "[!] Invalid parameters for group-create command\n";
+                std::cout << "[!] Invalid parameters for group-cmd command\n";
             }
         }
         else if (command == "group-create") {
             if (parameters.size() == 1) {
-                //return groupManager.CreateGroup(parameters[0]);
+                return ControllerCommandReq(CommandType::GroupCreate, "", parameters[0], "");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-create command\n";
@@ -60,8 +59,6 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
         else if (command == "group-add") {
             if (parameters.size() == 2) {
                 return ControllerCommandReq(CommandType::GroupAdd, parameters[1], parameters[0], "");
-                //AgentConnection* conn = *FindConnectionFromSocketStr(parameters[1]);
-                //groupManager.AddConnectionToGroup(parameters[0], conn);
             }
             else {
                 std::cout << "[!] Invalid parameters for group-add command\n";
@@ -69,7 +66,7 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
         }
         else if (command == "group-list") {
             if (parameters.size() == 1) {
-                //groupManager.ListGroupMembers(parameters[0]);
+                return ControllerCommandReq(CommandType::ListGroup, "", parameters[0], "");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-list command\n";
@@ -77,18 +74,31 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
         }
         else if (command == "group-delete") {
             if (parameters.size() == 1) {
-                //groupManager.DeleteGroup(parameters[0]);
+                return ControllerCommandReq(CommandType::GroupDelete, "", parameters[0], "");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-delete command\n";
             }
         }
+        else if (command == "group-remove") {
+            if (parameters.size() == 2) {
+                return ControllerCommandReq(CommandType::GroupRemove, parameters[1], parameters[0], "");
+            }
+            else {
+                std::cout << "[!] Invalid parameters for group-remove command\n";
+            }
+        }
         else if (command == "man") {
              return ControllerCommandReq(CommandType::Man, "", "", "");
+        }
+        else if (command == "groups") {
+            return ControllerCommandReq(CommandType::ListGroupNames, "", "", "");
         }
         else if (command != "") {
             return ControllerCommandReq(CommandType::Unknown, "", "", "");
         }
+
+        return ControllerCommandReq(CommandType::SyntaxError, "", "", "");
     }
 }
 

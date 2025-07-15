@@ -276,6 +276,33 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
             szResponse = "[*] Successfully deleted group " + controllerCommand.GetGroupName() + "\n";
         }
     }
+    else if (controllerCommand.GetCommandType() == CommandType::GroupRemove) {
+        AgentConnection* agentConn;
+        auto connectionIterator = FindConnectionFromSocketStr(controllerCommand.GetTargetAgent());
+
+        if (connectionIterator != arrAgentConnections.end()) {
+            agentConn = *connectionIterator;
+            bIsCommandSuccess = groupManager.RemoveConnectionFromGroup(controllerCommand.GetGroupName(), agentConn);
+
+            if (bIsCommandSuccess) {
+                szResponse = "[*] Successfully added " + controllerCommand.GetTargetAgent() + " to " +
+                    controllerCommand.GetGroupName() + " group\n";
+            }
+            else {
+                szResponse = "[!] Group " + controllerCommand.GetGroupName() + " doesn't exist\n";
+            }
+
+        }
+        else {
+            szResponse = "[!] Agent " + controllerCommand.GetTargetAgent() + " does not exist\n";
+        }
+    }
+    else if (controllerCommand.GetCommandType() == CommandType::ListGroup) {
+        bIsCommandSuccess = groupManager.ListGroupMembers(controllerCommand.GetGroupName(), szResponse);
+    }
+    else if (controllerCommand.GetCommandType() == CommandType::ListGroupNames) {
+        groupManager.GetGroupNames(szResponse);
+    }
 
     conn->SendData(szResponse);
 }
@@ -397,8 +424,11 @@ VOID Server1::HandleUserInput() {
             }
         }
         else if (command == "group-list") {
+            std::string szOutput;
+
             if (parameters.size() == 1) {
-                groupManager.ListGroupMembers(parameters[0]);
+                groupManager.ListGroupMembers(parameters[0], szOutput);
+                std::cout << szOutput;
             }
             else {
                 std::cout << "[!] Invalid parametrs for group-list command\n";

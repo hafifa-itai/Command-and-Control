@@ -11,7 +11,8 @@ public:
 	VOID AddConnectionToGroup(std::string szGroupName, AgentConnection* lpAgentConnection);
 	BOOL RemoveConnectionFromGroup(std::string szGroupName, AgentConnection* lpAgentConnection);
 	BOOL BroadcastToGroup(std::string szGroupName, std::string szCommand);
-	BOOL ListGroupMembers(std::string szGroupName);
+	BOOL ListGroupMembers(std::string szGroupName, std::string& szOutput);
+	VOID GetGroupNames(std::string& szOutput);
 
 private:
 	std::mutex mGroupMapMutex;
