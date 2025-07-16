@@ -13,6 +13,7 @@ public:
 	BOOL BroadcastToGroup(std::string szGroupName, std::string szCommand);
 	BOOL ListGroupMembers(std::string szGroupName, std::string& szOutput);
 	VOID GetGroupNames(std::string& szOutput);
+	BOOL CheckGroupExists(std::string szGroupName);
 
 private:
 	std::mutex mGroupMapMutex;

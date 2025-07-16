@@ -112,3 +112,14 @@ VOID GroupManager::GetGroupNames(std::string& szOutput)
 	}
 }
 
+BOOL GroupManager::CheckGroupExists(std::string szGroupName)
+{
+	if (groupMap.count(szGroupName)) {
+		if (groupMap[szGroupName].size() > 0) {
+			return TRUE;
+		}
+		return FALSE;
+	}
+	return FALSE;
+}
+

@@ -35,7 +35,12 @@ ControllerCommandReq UserInputHandler::CreateCommandObject()
             }
         }
         else if (command == "cmd") {
-            //return UserRunCommand(parameters);
+            if (parameters.size() != 1) {
+                std::cout << "[!] Invalid parameters for cmd command\n";
+            }
+            else {
+                return ControllerCommandReq(CommandType::OpenCmdWindow, parameters[0], "", "");
+            }
         }
         else if (command == "list") {
             return ControllerCommandReq(CommandType::List, "", "", "");

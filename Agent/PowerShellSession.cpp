@@ -1,9 +1,9 @@
 #include "PowerShellSession.hpp"
 #include <stdexcept>
-#include <vector>    // For std::vector (used for char buffer in RunCommand)
-#include <random>    // For random number generation in generateUniqueMarker
-#include <chrono>    // For high_resolution_clock in generateUniqueMarker
-#include <algorithm> // For std::find_last_not_of
+#include <vector>
+#include <random>
+#include <chrono>
+#include <algorithm>
 
 // Define a macro for safer handle closing
 #define CLOSE_HANDLE(handle) \
