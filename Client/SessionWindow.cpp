@@ -61,16 +61,19 @@ VOID SessionWindow::CommandLoop()
 		// ReadConsoleA includes the \r\n, so we remove it.
 		if (dwBytesRead >= 2) {
 			carrCommand[dwBytesRead - 2] = '\0';
-		}
-		szCommand = std::string(carrCommand);
 
-		if (szCommand == "exit") {
-			break;
-		}
+			szCommand = std::string(carrCommand);
 
-		// 5. Write the response back to the PARENT through the pipe.
-		if (!WriteFile(hPipeToParent, szCommand.c_str(), szCommand.length(), &dwBytesWritten, NULL)) {
-			break;
+			if (szCommand == "exit") {
+				break;
+			}
+			// 5. Write the response back to the PARENT through the pipe.
+			if (!WriteFile(hPipeToParent, szCommand.c_str(), szCommand.length(), &dwBytesWritten, NULL)) {
+				break;
+			}
+		}
+		else {
+			exit(1);
 		}
 	}
 }

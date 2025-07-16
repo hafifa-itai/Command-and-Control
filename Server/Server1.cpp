@@ -27,12 +27,12 @@ INT Server1::StartServer() {
     arrThreads[0] = std::thread(&Server1::ListenForConnections, this, 3000, arrListeningSockets[0]);
     arrThreads[1] = std::thread(&Server1::ListenForConnections, this ,3001, arrListeningSockets[1]);
 
-    std::cout << "[+] Listening for clients on port 3000\n";
-    std::cout << "[+] Listening for agents on port 3001\n";
+    std::cout << "[+] Listening for clients on port 3000 TID - " << arrThreads[0].get_id() << "\n";
+    std::cout << "[+] Listening for agents on port 3001 TID - " << arrThreads[1].get_id() << "\n";
 
     HandleUserInput();
 
-    arrThreads[0].join();
+    //arrThreads[0].join();
     arrThreads[1].join();
     WSACleanup();
 
@@ -314,6 +314,7 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
         }
     }
     else if (controllerCommand.GetCommandType() == CommandType::Execute) {
+        //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
         auto connectionIterator = FindConnectionFromSocketStr(controllerCommand.GetTargetAgent());
         (*connectionIterator)->SendData(controllerCommand.GetParameters());
         (*connectionIterator)->ReceiveData(FALSE, szResponse);
@@ -342,7 +343,7 @@ std::string Server1::GetActiveAgentSockets() {
 
 
 std::vector<AgentConnection*>::iterator Server1::FindConnectionFromSocketStr(std::string szSocket) {
-    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+    //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
         AgentConnection* conn = *connectionsIterator;
@@ -471,6 +472,7 @@ VOID Server1::HandleUserInput() {
 
 BOOL Server1::CloseConnection(std::string szSocket) {
     auto connectionsIterator = FindConnectionFromSocketStr(szSocket);
+    //CHANGE:
     std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     if (connectionsIterator != arrAgentConnections.end()) {
@@ -502,7 +504,8 @@ VOID Server1::UserRunCommand(const std::vector<std::string>& arrParameters) {
     //std::cout << "Last parameter: " << szSocket << "\n";
 
     auto connectionsIterator = FindConnectionFromSocketStr(szSocket);
-    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+    //CHANGE
+    //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     if (connectionsIterator != arrAgentConnections.end()) {
         std::string szData;

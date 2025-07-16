@@ -13,7 +13,8 @@ BOOL AgentConnection::SendData(const std::string& command) {
     return sent == command.size();
 }
 
-BOOL AgentConnection::ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer) {
+BOOL AgentConnection::ReceiveData(BOOL bIsPeekingData, std::string& szOutBuffer) {
+    INT iFlags = bIsPeekingData ? MSG_PEEK : 0;
     INT iBytesReceived;
     CHAR carrBuffer[4096];
 
@@ -21,15 +22,35 @@ BOOL AgentConnection::ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer)
         return FALSE;
     }
 
-    iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, MSG_PEEK & bIsPeekingData);
+    uint32_t uiNetMessageLen;
+    uint32_t uiHostMessageLen;
+    std::cout << "before recv";
+    iBytesReceived = recv(socket, (LPSTR)&uiNetMessageLen, sizeof(uiNetMessageLen), iFlags);
+    std::cout << "after recv";
 
     if (iBytesReceived > 0) {
         if (!bIsPeekingData) {
-            carrBuffer[iBytesReceived] = '\0';
-            szoutBuffer = carrBuffer;
-        }
+            szOutBuffer.clear();
+            uiHostMessageLen = ntohl(uiNetMessageLen);
+            INT iTotalBytesReceived = 0;
 
-        return TRUE;
+            if (uiHostMessageLen > 20 * 1024 * 1024) {
+                return FALSE;
+            }
+
+            while (iTotalBytesReceived < uiHostMessageLen) {
+                iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, 0);
+                carrBuffer[iBytesReceived] = '\0';
+                szOutBuffer += carrBuffer;
+                iTotalBytesReceived += iBytesReceived;
+            }
+
+            std::cout << szOutBuffer;
+            return TRUE;
+        }
+        else {
+            return TRUE;
+        }
     }
 
     return FALSE;

@@ -122,6 +122,7 @@ BOOL Controller::SendCommand(ControllerCommandReq commandReq)
 }
 
 BOOL Controller::ReceiveData(std::string& szOutBuffer) {
+
     INT iBytesReceived;
     CHAR carrBuffer[4096];
 
@@ -129,14 +130,47 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
         return FALSE;
     }
 
-    iBytesReceived = recv(sock, carrBuffer, sizeof(carrBuffer) - 1, 0);
+    uint32_t uiNetMessageLen;
+    uint32_t uiHostMessageLen;
+    iBytesReceived = recv(sock, (LPSTR)&uiNetMessageLen, sizeof(uiNetMessageLen), 0);
 
     if (iBytesReceived > 0) {
-        carrBuffer[iBytesReceived] = '\0';
-        szOutBuffer = carrBuffer;
+        szOutBuffer.clear();
+        uiHostMessageLen = ntohl(uiNetMessageLen);
+        INT iTotalBytesReceived = 0;
+
+        if (uiHostMessageLen > 20 * 1024 * 1024) {
+            return FALSE;
+        }
+
+        while (iTotalBytesReceived < uiHostMessageLen) {
+            iBytesReceived = recv(sock, carrBuffer, sizeof(carrBuffer) - 1, 0);
+            carrBuffer[iBytesReceived] = '\0';
+            szOutBuffer += carrBuffer;
+            iTotalBytesReceived += iBytesReceived;
+        }
+
+        std::cout << "received:\n" << szOutBuffer;
+        return TRUE;
+
     }
 
     return FALSE;
+    //INT iBytesReceived;
+    //CHAR carrBuffer[4096];
+
+    //if (sock == INVALID_SOCKET) {
+    //    return FALSE;
+    //}
+
+    //iBytesReceived = recv(sock, carrBuffer, sizeof(carrBuffer) - 1, 0);
+
+    //if (iBytesReceived > 0) {
+    //    carrBuffer[iBytesReceived] = '\0';
+    //    szOutBuffer = carrBuffer;
+    //}
+
+    //return FALSE;
 }
 
 VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string szInitialCwd)
