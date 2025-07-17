@@ -22,6 +22,8 @@
 #include <mutex>
 #include <unordered_map>
 #include <algorithm>
+#include <condition_variable>
+#include <queue>
 
 #pragma comment(lib, "Ws2_32.lib")
 

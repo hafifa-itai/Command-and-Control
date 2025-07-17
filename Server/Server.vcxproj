@@ -137,6 +137,7 @@
     <ClCompile Include="GroupManager.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Server1.cpp" />
+    <ClCompile Include="ThreadSafeQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AgentConnection.hpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="ControllerConnection.hpp" />
     <ClInclude Include="GroupManager.hpp" />
     <ClInclude Include="Server1.hpp" />
+    <ClInclude Include="ThreadSafeQueue.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Update="C:\Users\dudyi\source\repos\Command-and-Control\sharedClasses\ControllerCommand.Reqcpp">

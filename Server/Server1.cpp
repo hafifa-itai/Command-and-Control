@@ -30,9 +30,9 @@ INT Server1::StartServer() {
     std::cout << "[+] Listening for clients on port 3000 TID - " << arrThreads[0].get_id() << "\n";
     std::cout << "[+] Listening for agents on port 3001 TID - " << arrThreads[1].get_id() << "\n";
 
-    HandleUserInput();
+    //HandleUserInput();
 
-    //arrThreads[0].join();
+    arrThreads[0].join();
     arrThreads[1].join();
     WSACleanup();
 
@@ -127,13 +127,17 @@ VOID Server1::CheckForClosedAgentConnections()
         if (IsSocketInSet(conn->GetSocket(), AGENT_INDEX)) {
             std::string szData;
             BOOL bIsConnectionAlive;
-            bIsConnectionAlive = conn->ReceiveData(TRUE, szData);
+            bIsConnectionAlive = conn->ReceiveData(szData);
 
             if (!bIsConnectionAlive) {
                 std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
                 connectionsIterator = RemoveAgentConnection(connectionsIterator);
             }
             else {
+                if (!szData.empty()) {
+                    conn->EnqueueIncomingData(szData);
+                }
+
                 ++connectionsIterator;
             }
         }
@@ -154,7 +158,7 @@ VOID Server1::CheckForControllerConnections()
         if (IsSocketInSet(conn->GetSocket(), CONTROLLER_INDEX)) {
             std::string szData;
             BOOL bIsConnectionAlive;
-            bIsConnectionAlive = conn->ReceiveData(FALSE, szData);
+            bIsConnectionAlive = conn->ReceiveData(szData);
 
             if (!bIsConnectionAlive) {
                 std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
@@ -317,7 +321,9 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
         //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
         auto connectionIterator = FindConnectionFromSocketStr(controllerCommand.GetTargetAgent());
         (*connectionIterator)->SendData(controllerCommand.GetParameters());
-        (*connectionIterator)->ReceiveData(FALSE, szResponse);
+        (*connectionIterator)->GetDataFromQueue(szResponse, -1);
+        //Change:
+        //(*connectionIterator)->ReceiveData(FALSE, szResponse);
     }
 
     conn->SendData(szResponse);
@@ -343,7 +349,7 @@ std::string Server1::GetActiveAgentSockets() {
 
 
 std::vector<AgentConnection*>::iterator Server1::FindConnectionFromSocketStr(std::string szSocket) {
-    //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
         AgentConnection* conn = *connectionsIterator;
@@ -510,7 +516,7 @@ VOID Server1::UserRunCommand(const std::vector<std::string>& arrParameters) {
     if (connectionsIterator != arrAgentConnections.end()) {
         std::string szData;
         (*connectionsIterator)->SendData(szCommand);
-        (*connectionsIterator)->ReceiveData(FALSE, szData);
+        (*connectionsIterator)->ReceiveData(szData);
         std::cout << "[*] received from " << (*connectionsIterator)->GetSocketStr() << " : \n" << szData << "\n";
     }
 

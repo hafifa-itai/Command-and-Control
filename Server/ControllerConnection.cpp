@@ -24,7 +24,7 @@ BOOL ControllerConnection::SendData(const std::string& command) {
     return iBytesSent == szFinalData.size();
 }
 
-BOOL ControllerConnection::ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer) {
+BOOL ControllerConnection::ReceiveData(std::string& szOutBuffer) {
     INT iBytesReceived;
     CHAR carrBuffer[4096];
 
@@ -32,14 +32,12 @@ BOOL ControllerConnection::ReceiveData(BOOL bIsPeekingData, std::string& szoutBu
         return FALSE;
     }
 
-    iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, MSG_PEEK & bIsPeekingData);
+    iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, 0);
 
     if (iBytesReceived > 0) {
-        if (!bIsPeekingData) {
-            carrBuffer[iBytesReceived] = '\0';
-            szoutBuffer = carrBuffer;
-        }
-
+        carrBuffer[iBytesReceived] = '\0';
+        szOutBuffer = carrBuffer;
+        
         return TRUE;
     }
 

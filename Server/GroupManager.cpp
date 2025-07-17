@@ -61,7 +61,7 @@ BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szComma
 		if (connectionsGroup.size()) {
 			for (AgentConnection* conn : connectionsGroup) {
 				conn->SendData(szCommand);
-				conn->ReceiveData(FALSE, szData);
+				//conn->ReceiveData(szData);
 				std::cout << "[*] received from " << conn->GetSocketStr() << " : \n" << szData << "\n";
 			}
 

@@ -150,7 +150,7 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
             iTotalBytesReceived += iBytesReceived;
         }
 
-        std::cout << "received:\n" << szOutBuffer;
+        //std::cout << "received:\n" << szOutBuffer;
         return TRUE;
 
     }

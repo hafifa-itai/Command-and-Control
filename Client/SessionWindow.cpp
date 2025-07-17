@@ -1,6 +1,8 @@
 #include "SessionWindow.hpp"
 
 SessionWindow::SessionWindow() {
+	bIsRunning = TRUE;
+
 	// Handles to talk with Main Controller:
 	hPipeFromParent = GetStdHandle(STD_INPUT_HANDLE);
 	hPipeToParent = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -25,9 +27,6 @@ SessionWindow::SessionWindow() {
 		FILE_ATTRIBUTE_NORMAL,
 		NULL
 	);
-	//DWORD bytesWritten;
-	//std::string initialMsg = "C:\\>\n";
-	//WriteConsoleA(hConsoleOut, initialMsg.c_str(), initialMsg.length(), NULL, NULL);
 }
 
 SessionWindow::~SessionWindow()
@@ -36,44 +35,68 @@ SessionWindow::~SessionWindow()
 	CloseHandle(hConsoleIn);
 }
 
-VOID SessionWindow::CommandLoop()
-{
-	std::string szCommand;
-	std::string szResponse;
-	CHAR carrCommand[512];
+VOID SessionWindow::PrintParentMessage() {
 	CHAR carrResponse[4096];
-	DWORD dwBytesRead;
 	DWORD dwBytesWritten;
+	DWORD dwBytesRead;
+	DWORD dwBytesAvailable;
 
-	while (TRUE) {
-		// 1. Wait for and read the parent's message from the pipe.
-		if (!ReadFile(hPipeFromParent, carrResponse, sizeof(carrResponse) - 1, &dwBytesRead, NULL) || dwBytesRead == 0) {
+	while (bIsRunning) {
+		if (!PeekNamedPipe(hPipeFromParent, NULL, 0, NULL, &dwBytesAvailable, NULL)) {
+			bIsRunning = FALSE;
 			break;
 		}
-		carrResponse[dwBytesRead] = '\0';
 
-		// 2. Write the parent's message to the child's OWN screen.
-		szResponse = std::string(carrResponse);
-		WriteConsoleA(hConsoleOut, szResponse.c_str(), szResponse.length(), &dwBytesWritten, NULL);
+		if (dwBytesAvailable > 0) {
+			if (ReadFile(hPipeFromParent, carrResponse, sizeof(carrResponse), &dwBytesRead, NULL) && dwBytesRead > 0) {
+				WriteConsoleA(hConsoleOut, carrResponse, dwBytesRead, &dwBytesWritten, NULL);
+			}
+			else {
+				bIsRunning = FALSE;
+				break;
+			}
+		}
+		else {
+			Sleep(10);
+		}
+	}
 
-		// 4. Read the response from the child's OWN keyboard.
+	//while (TRUE) {
+	//	if (ReadFile(hPipeFromParent, carrResponse, sizeof(carrResponse), &dwBytesRead, NULL) && dwBytesRead > 0) {
+	//		WriteConsoleA(hConsoleOut, carrResponse, dwBytesRead, &dwBytesWritten, NULL);
+	//	}
+	//	else {
+	//		bIsRunning = FALSE;
+	//		break;
+	//	}
+	//}
+}
+
+VOID SessionWindow::GetUserCommands()
+{
+	BOOL bIsNewLine;
+	CHAR carrCommand[512];
+	DWORD dwBytesRead;
+	DWORD dwBytesWritten;
+	std::string szCommand;
+
+	while (bIsRunning) {
 		ReadConsoleA(hConsoleIn, carrCommand, sizeof(carrCommand) - 1, &dwBytesRead, NULL);
-		// ReadConsoleA includes the \r\n, so we remove it.
-		if (dwBytesRead >= 2) {
+
+		if (dwBytesRead > 2) {
 			carrCommand[dwBytesRead - 2] = '\0';
 
 			szCommand = std::string(carrCommand);
 
 			if (szCommand == "exit") {
+				bIsRunning = FALSE;
 				break;
 			}
-			// 5. Write the response back to the PARENT through the pipe.
 			if (!WriteFile(hPipeToParent, szCommand.c_str(), szCommand.length(), &dwBytesWritten, NULL)) {
-				break;
-			}
+				bIsRunning = FALSE;			}
 		}
-		else {
-			exit(1);
+		else if (dwBytesRead != 2){
+			bIsRunning = FALSE;
 		}
 	}
 }

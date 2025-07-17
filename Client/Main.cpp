@@ -10,6 +10,8 @@ INT main(INT iArgumentCount, CHAR* arrArgumentVector[]) {
 	}
 	else {
 		SessionWindow sessionWindow;
-		sessionWindow.CommandLoop();
+		std::thread t(&SessionWindow::PrintParentMessage, &sessionWindow);
+		sessionWindow.GetUserCommands();
+		t.join();
 	}
 }

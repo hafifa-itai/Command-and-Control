@@ -8,6 +8,6 @@ public:
     ~ControllerConnection() override;
 
     BOOL SendData(const std::string& command) override;
-    BOOL ReceiveData(BOOL bIsPeekingData, std::string& szoutBuffer) override;
+    BOOL ReceiveData(std::string& szoutBuffer) override;
 };
 

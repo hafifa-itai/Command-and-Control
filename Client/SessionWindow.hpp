@@ -8,9 +8,11 @@ public:
 	SessionWindow();
 	~SessionWindow();
 
-	VOID CommandLoop();
+	VOID PrintParentMessage();
+	VOID GetUserCommands();
 
 private:
+	BOOL bIsRunning;
 	HANDLE hPipeFromParent;
 	HANDLE hPipeToParent;
 

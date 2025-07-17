@@ -13,8 +13,7 @@ BOOL AgentConnection::SendData(const std::string& command) {
     return sent == command.size();
 }
 
-BOOL AgentConnection::ReceiveData(BOOL bIsPeekingData, std::string& szOutBuffer) {
-    INT iFlags = bIsPeekingData ? MSG_PEEK : 0;
+BOOL AgentConnection::ReceiveData(std::string& szOutBuffer) {
     INT iBytesReceived;
     CHAR carrBuffer[4096];
 
@@ -24,36 +23,44 @@ BOOL AgentConnection::ReceiveData(BOOL bIsPeekingData, std::string& szOutBuffer)
 
     uint32_t uiNetMessageLen;
     uint32_t uiHostMessageLen;
-    std::cout << "before recv";
-    iBytesReceived = recv(socket, (LPSTR)&uiNetMessageLen, sizeof(uiNetMessageLen), iFlags);
-    std::cout << "after recv";
+    std::cout << "\n*before recv*\n";
+    iBytesReceived = recv(socket, (LPSTR)&uiNetMessageLen, sizeof(uiNetMessageLen), 0);
+    std::cout << "\n*after recv*\n";
+
 
     if (iBytesReceived > 0) {
-        if (!bIsPeekingData) {
-            szOutBuffer.clear();
-            uiHostMessageLen = ntohl(uiNetMessageLen);
-            INT iTotalBytesReceived = 0;
+        
+        szOutBuffer.clear();
+        uiHostMessageLen = ntohl(uiNetMessageLen);
+        INT iTotalBytesReceived = 0;
 
-            if (uiHostMessageLen > 20 * 1024 * 1024) {
-                return FALSE;
-            }
-
-            while (iTotalBytesReceived < uiHostMessageLen) {
-                iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, 0);
-                carrBuffer[iBytesReceived] = '\0';
-                szOutBuffer += carrBuffer;
-                iTotalBytesReceived += iBytesReceived;
-            }
-
-            std::cout << szOutBuffer;
-            return TRUE;
+        if (uiHostMessageLen > 20 * 1024 * 1024) {
+            return FALSE;
         }
-        else {
-            return TRUE;
+
+        while (iTotalBytesReceived < uiHostMessageLen) {
+            iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, 0);
+            carrBuffer[iBytesReceived] = '\0';
+            szOutBuffer += carrBuffer;
+            iTotalBytesReceived += iBytesReceived;
         }
+
+        std::cout << szOutBuffer;
+        return TRUE;
+        
     }
 
     return FALSE;
+}
+
+BOOL AgentConnection::GetDataFromQueue(std::string& szOutResponse, INT iTimeoutMs)
+{
+    return qIncomingMessages.WaitAndPop(szOutResponse, iTimeoutMs);
+}
+
+
+VOID AgentConnection::EnqueueIncomingData(const std::string& szData) {
+    qIncomingMessages.Push(szData);
 }
 
 
