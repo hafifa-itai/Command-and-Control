@@ -42,6 +42,7 @@ VOID SessionWindow::PrintParentMessage() {
 	DWORD dwBytesAvailable;
 
 	while (bIsRunning) {
+
 		if (!PeekNamedPipe(hPipeFromParent, NULL, 0, NULL, &dwBytesAvailable, NULL)) {
 			bIsRunning = FALSE;
 			break;
@@ -49,7 +50,8 @@ VOID SessionWindow::PrintParentMessage() {
 
 		if (dwBytesAvailable > 0) {
 			if (ReadFile(hPipeFromParent, carrResponse, sizeof(carrResponse), &dwBytesRead, NULL) && dwBytesRead > 0) {
-				WriteConsoleA(hConsoleOut, carrResponse, dwBytesRead, &dwBytesWritten, NULL);
+				WriteConsoleA(hConsoleOut, carrResponse , dwBytesRead, &dwBytesWritten, NULL);
+				WriteConsoleA(hConsoleOut, "> ", 2, &dwBytesWritten, NULL);
 			}
 			else {
 				bIsRunning = FALSE;

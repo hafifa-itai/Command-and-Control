@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#define GET_CWD ";$PWD.Path;"
 
 class PowerShellSession
 {

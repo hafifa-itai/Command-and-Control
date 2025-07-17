@@ -119,7 +119,7 @@ std::string PowerShellSession::CleanOutput(std::string& szOutputBuffer, const st
 }
 
 
-std::string PowerShellSession::RunCommand(const std::string& szCommandmd)
+std::string PowerShellSession::RunCommand(const std::string& szCommand)
 {
     BOOL bIsReadSuccess;
     BOOL bIsWriteSuccess;
@@ -129,7 +129,7 @@ std::string PowerShellSession::RunCommand(const std::string& szCommandmd)
     DWORD dwBytesWritten;
     std::string szOutputBuffer;
     std::string szUniqueMarker = generateUniqueMarker();
-    std::string fullCommand = szCommandmd + "\nWrite-Host '" + szUniqueMarker + "'\n";
+    std::string fullCommand = szCommand + GET_CWD +"\nWrite-Host '" + szUniqueMarker + "'\n";
 
     bIsWriteSuccess = WriteFile(
         hChildStdinWrite,
@@ -147,40 +147,32 @@ std::string PowerShellSession::RunCommand(const std::string& szCommandmd)
     }
 
     while (TRUE) {
-        bIsPipeAvailable = PeekNamedPipe(
-            hChildStdoutRead,
-            NULL,
-            0,
-            NULL,
-            NULL,
-            NULL
-        );
+        bIsPipeAvailable = PeekNamedPipe(hChildStdoutRead, NULL, 0, NULL, &dwBytesRead, NULL);
 
         if (!bIsPipeAvailable) {
             throw std::runtime_error("Failed to peek PowerShell stdout pipe: " + std::to_string(GetLastError()));
         }
+        else if (dwBytesRead > 0) {
+            bIsReadSuccess = ReadFile(hChildStdoutRead, carrReadBuffer, sizeof(carrReadBuffer) - 1, &dwBytesRead, NULL);
 
-        bIsReadSuccess = ReadFile(
-            hChildStdoutRead,
-            carrReadBuffer,
-            sizeof(carrReadBuffer) - 1,
-            &dwBytesRead,
-            NULL
-        );
+            if (!bIsReadSuccess || dwBytesRead == 0) {
+                throw std::runtime_error("Failed to read from PowerShell stdout: " + std::to_string(GetLastError()));
+                break;
+            }
 
-        if (!bIsReadSuccess || dwBytesRead == 0) {
-            throw std::runtime_error("Failed to read from PowerShell stdout: " + std::to_string(GetLastError()));
-            break;
+            carrReadBuffer[dwBytesRead] = '\0';
+            szOutputBuffer.append(carrReadBuffer, dwBytesRead);
+
+            size_t markerPos = szOutputBuffer.find(szUniqueMarker);
+
+            if (markerPos != std::string::npos) {
+                return CleanOutput(szOutputBuffer, szUniqueMarker, markerPos);
+            }
+        }
+        else {
+            Sleep(10);
         }
 
-        carrReadBuffer[dwBytesRead] = '\0';
-        szOutputBuffer.append(carrReadBuffer, dwBytesRead);
-
-        size_t markerPos = szOutputBuffer.find(szUniqueMarker);
-
-        if (markerPos != std::string::npos) {
-            return CleanOutput(szOutputBuffer, szUniqueMarker, markerPos);
-        }
     }
 
     std::cerr << "Warning: Unique marker not found in PowerShell output. Returning partial/full buffer." << std::endl;

@@ -8,8 +8,16 @@ AgentConnection::~AgentConnection() {
 }
 
 BOOL AgentConnection::SendData(const std::string& command) {
-    if (socket == INVALID_SOCKET) return false;
-    int sent = send(socket, command.c_str(), static_cast<int>(command.size()), 0);
+    if (socket == INVALID_SOCKET) {
+        return FALSE;
+    }
+
+    if (command.empty()) {
+        INT sent = send(socket, NOP_COMMAND, NOP_COMMAND_SIZE, 0);
+        return sent == NOP_COMMAND_SIZE;
+    }
+
+    INT sent = send(socket, command.c_str(), static_cast<int>(command.size()), 0);
     return sent == command.size();
 }
 

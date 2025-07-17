@@ -7,6 +7,7 @@
 #define CONTROLLER_INDEX 0
 #define AGENT_INDEX 1
 
+
 enum class CommandType : int {
     Unknown,
     Quit,

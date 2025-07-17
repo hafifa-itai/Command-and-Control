@@ -318,12 +318,18 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
         }
     }
     else if (controllerCommand.GetCommandType() == CommandType::Execute) {
-        //std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+        //std::string szCwd;
         auto connectionIterator = FindConnectionFromSocketStr(controllerCommand.GetTargetAgent());
-        (*connectionIterator)->SendData(controllerCommand.GetParameters());
-        (*connectionIterator)->GetDataFromQueue(szResponse, -1);
-        //Change:
-        //(*connectionIterator)->ReceiveData(FALSE, szResponse);
+
+        if (connectionIterator != arrAgentConnections.end()) {
+            (*connectionIterator)->SendData(controllerCommand.GetParameters());
+            (*connectionIterator)->GetDataFromQueue(szResponse, -1);
+        }
+        else {
+            szResponse = "Connection Lost";
+        }
+        //ParseAgentResponse(szResponse);
+        //std::cout << "cwd: " << szCwd;
     }
 
     conn->SendData(szResponse);
@@ -345,6 +351,40 @@ std::string Server1::GetActiveAgentSockets() {
     }
 
     return szResult;
+}
+
+VOID Server1::ParseAgentResponse(std::string szResponse, std::string& szOutput)
+{
+    szOutput.clear();
+
+    // 2. Find the last non-whitespace character to gracefully handle trailing empty lines.
+    size_t last_char_pos = szResponse.find_last_not_of(" \t\r\n");
+
+    // Handle case where the source is empty or contains only whitespace.
+    //if (last_char_pos == std::string::npos) {
+    //    szResponse.clear();
+    //    return;
+    //}
+
+    // 3. Trim the source string to get rid of trailing empty lines.
+    // This makes finding the last *real* line of text reliable.
+    szResponse.resize(last_char_pos + 1);
+
+    // 4. Find the last newline character in the now-trimmed string.
+    size_t last_newline_pos = szResponse.find_last_of('\n');
+
+    if (last_newline_pos == std::string::npos) {
+        // Case A: No newline was found. The entire string is the last line.
+        szOutput = szResponse;
+    }
+    else {
+        // Case B: A newline was found.
+        // The last line is the substring *after* this newline character.
+        szOutput = szResponse.substr(last_newline_pos + 1);
+
+        // Remove the last line AND the preceding newline character from the source.
+        szResponse.erase(last_newline_pos);
+    }
 }
 
 

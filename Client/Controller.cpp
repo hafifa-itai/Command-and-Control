@@ -181,6 +181,7 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     HANDLE hChildStdoutWrite;
     HANDLE hChildStdinRead;
     HANDLE hChildStdinWrite;
+    std::string szWindowName;
     std::string szWindowCommand;
     std::string szCommandOutput;
     std::string szProcessCommandLine;
@@ -208,8 +209,15 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
     // Create child process
+    if (commandReq.GetGroupName().empty()) {
+        szWindowName = commandReq.GetTargetAgent();
+    }
+    else {
+        szWindowName = commandReq.GetGroupName();
+    }
+
     GetModuleFileNameA(NULL, carrSelfPath, MAX_PATH);
-    szProcessCommandLine = std::string(carrSelfPath) + " " + CHILD_PROCESS_FLAG;
+    szProcessCommandLine = std::string(carrSelfPath) + " " + szWindowName;
     bIsChildCreated = CreateProcessA(
         NULL,
         &szProcessCommandLine[0],
@@ -232,7 +240,10 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     CloseHandle(hChildStdoutWrite);
     CloseHandle(hChildStdinRead);
 
-    WriteToChild(hChildStdinWrite, szInitialCwd);
+    // Get initial CWD
+    SendCommand(ControllerCommandReq(CommandType::Execute, commandReq.GetTargetAgent(), commandReq.GetGroupName(), ""));
+    ReceiveData(szCommandOutput);
+    WriteToChild(hChildStdinWrite, szCommandOutput);
 
     while (bIsRunning) {
         if (!ReadFromChild(hChildStdoutRead, szWindowCommand)) {
@@ -242,7 +253,7 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
         SendCommand(ControllerCommandReq(CommandType::Execute, commandReq.GetTargetAgent(), commandReq.GetGroupName(), szWindowCommand));
         ReceiveData(szCommandOutput);
 
-        if (!WriteToChild(hChildStdinWrite, szCommandOutput + "\n" + szInitialCwd)) {
+        if (!WriteToChild(hChildStdinWrite, szCommandOutput)) {
             break;
         }
     }

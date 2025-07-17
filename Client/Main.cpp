@@ -9,6 +9,7 @@ INT main(INT iArgumentCount, CHAR* arrArgumentVector[]) {
 		}
 	}
 	else {
+		SetConsoleTitleA(arrArgumentVector[1]);
 		SessionWindow sessionWindow;
 		std::thread t(&SessionWindow::PrintParentMessage, &sessionWindow);
 		sessionWindow.GetUserCommands();
