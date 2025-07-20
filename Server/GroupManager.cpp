@@ -66,7 +66,7 @@ BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szComma
 				conn->GetDataFromQueue(szResponse, -1);
 				ParseAgentResponse(szResponse, szCwd);
 				arrConnectionsCwds.push_back("\\\\" + conn->GetSocketStr() + "\\" + szCwd + ">\n");
-				//std::cout << "[*] received from " << conn->GetSocketStr() << " : \n" << szResponse << "\n";
+
 				if (!szResponse.empty()) {
 					szResponse = "[*] received from " + conn->GetSocketStr() + " : \n" + szResponse + "\n";
 					szOutput.append(szResponse);

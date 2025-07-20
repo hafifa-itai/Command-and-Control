@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pch.h"
-#include "UserInputHandler.hpp"
 #include "ControllerCommandReq.hpp"
 #include "SessionWindow.hpp"
 
@@ -28,6 +27,5 @@ private:
 	BOOL bIsRunning;
 	SOCKET sock;
 	std::string szServerIp;
-	UserInputHandler inputHandler;
 	std::vector<std::thread> arrWindowSessionThreads;
 };

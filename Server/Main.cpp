@@ -1,8 +1,8 @@
-#include "Server1.hpp"
+#include "Server.hpp"
 
 INT main() {
 	try {
-		Server1 server;
+		Server server;
 		server.StartServer();
 	}
 	catch (const std::exception& e) {

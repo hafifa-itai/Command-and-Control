@@ -2,11 +2,6 @@
 #include "Connection.hpp"
 #include "ThreadSafeQueue.hpp"
 
-#define NOP_COMMAND "$null = $null"
-#define NOP_COMMAND_SIZE 13
-
-
-
 class AgentConnection : public Connection{
 public:
     AgentConnection(SOCKET agentSocket);

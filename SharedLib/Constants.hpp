@@ -8,6 +8,8 @@
 #define AGENT_INDEX 1
 #define GET_CWD ";$PWD.Path;"
 #define VERBOSE_JSON 4
+#define NOP_COMMAND "$null = $null"
+#define NOP_COMMAND_SIZE 13
 
 
 enum class CommandType : int {

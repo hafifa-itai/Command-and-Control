@@ -24,7 +24,7 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Server1.cpp">
+    <ClCompile Include="Server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GroupManager.cpp">
@@ -44,7 +44,7 @@
     <ClInclude Include="Connection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Server1.hpp">
+    <ClInclude Include="Server.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GroupManager.hpp">

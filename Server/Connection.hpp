@@ -1,6 +1,8 @@
 #pragma once
 
 #include "pch.h"
+#include "Constants.hpp"
+
 
 typedef struct SocketClientInfo {
     std::string szIp;

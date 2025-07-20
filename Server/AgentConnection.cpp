@@ -8,22 +8,23 @@ AgentConnection::~AgentConnection() {
 }
 
 BOOL AgentConnection::SendData(const std::string& command) {
+    INT iBytesSent;
     if (socket == INVALID_SOCKET) {
         return FALSE;
     }
 
     if (command.empty()) {
-        INT sent = send(socket, NOP_COMMAND, NOP_COMMAND_SIZE, 0);
-        return sent == NOP_COMMAND_SIZE;
+        iBytesSent = send(socket, NOP_COMMAND, NOP_COMMAND_SIZE, 0);
+        return iBytesSent == NOP_COMMAND_SIZE;
     }
 
-    INT sent = send(socket, command.c_str(), static_cast<int>(command.size()), 0);
-    return sent == command.size();
+    iBytesSent = send(socket, command.c_str(), static_cast<int>(command.size()), 0);
+    return iBytesSent == command.size();
 }
 
 BOOL AgentConnection::ReceiveData(std::string& szOutBuffer) {
     INT iBytesReceived;
-    CHAR carrBuffer[4096];
+    CHAR carrBuffer[MAX_BUFFER_SIZE];
 
     if (socket == INVALID_SOCKET) {
         return FALSE;
@@ -31,9 +32,7 @@ BOOL AgentConnection::ReceiveData(std::string& szOutBuffer) {
 
     uint32_t uiNetMessageLen;
     uint32_t uiHostMessageLen;
-    std::cout << "\n*before recv*\n";
     iBytesReceived = recv(socket, (LPSTR)&uiNetMessageLen, sizeof(uiNetMessageLen), 0);
-    std::cout << "\n*after recv*\n";
 
 
     if (iBytesReceived > 0) {
@@ -88,9 +87,3 @@ std::vector<std::string> AgentConnection::GetGroups()
 {
     return arrGroups;
 }
-
-
-//BOOL AgentConnection::IsConnectionAlive() const {
-//    return socket != INVALID_SOCKET;
-//}
-

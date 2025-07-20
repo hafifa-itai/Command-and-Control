@@ -26,7 +26,7 @@ BOOL ControllerConnection::SendData(const std::string& command) {
 
 BOOL ControllerConnection::ReceiveData(std::string& szOutBuffer) {
     INT iBytesReceived;
-    CHAR carrBuffer[4096];
+    CHAR carrBuffer[MAX_BUFFER_SIZE];
 
     if (socket == INVALID_SOCKET) {
         return FALSE;

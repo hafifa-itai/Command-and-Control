@@ -7,14 +7,13 @@
 #include "GroupManager.hpp"
 #include "ControllerCommandReq.hpp"
 
-class Server1 {
+class Server {
 public:
-	Server1() = default;
-	~Server1();
+	Server() = default;
+	~Server();
 	
 
 	INT StartServer();
-	std::vector<AgentConnection*> GetAgentConnections() const;
 	BOOL CreateListeningSocket(INT port, SOCKET& outSocket);
 	BOOL ListenForConnections(INT nPort, SOCKET listeningSocket);
 	VOID AcceptNewConnections(SOCKET listeningSocket, INT iFdSetIndex);
@@ -37,11 +36,11 @@ public:
 
 
 	// Functions to handle controller input
-	VOID HandleUserInput();
+	//VOID HandleUserInput();
 	BOOL CloseConnection(std::string szSocket);
-	VOID UserRunCommand(const std::vector<std::string>& parameters);
-	VOID UserRunCommandOnGroup(const std::vector<std::string>& arrParameters);
-	VOID UserShowMan();
+	//VOID UserRunCommand(const std::vector<std::string>& parameters);
+	//VOID UserRunCommandOnGroup(const std::vector<std::string>& arrParameters);
+	//VOID UserShowMan();
 
 	// Functions to handle socket fd_sets:
 	fd_set GetMasterSet(INT iFdSetIndex);
