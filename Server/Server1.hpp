@@ -26,7 +26,6 @@ public:
 	std::vector<AgentConnection*>::iterator RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator);
 	VOID RemoveConnectionFromAllGroups(AgentConnection* conn);
 	std::string GetActiveAgentSockets();
-	VOID ParseAgentResponse(std::string szResponse, std::string& szOutput);
 
 
 	// Controller connections:

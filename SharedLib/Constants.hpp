@@ -13,6 +13,7 @@ enum class CommandType : int {
     Quit,
     Close,
     Execute,
+    GroupExecute,
     OpenCmdWindow,
     List,
     GroupCreate,

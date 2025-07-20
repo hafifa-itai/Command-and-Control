@@ -156,31 +156,18 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
     }
 
     return FALSE;
-    //INT iBytesReceived;
-    //CHAR carrBuffer[4096];
-
-    //if (sock == INVALID_SOCKET) {
-    //    return FALSE;
-    //}
-
-    //iBytesReceived = recv(sock, carrBuffer, sizeof(carrBuffer) - 1, 0);
-
-    //if (iBytesReceived > 0) {
-    //    carrBuffer[iBytesReceived] = '\0';
-    //    szOutBuffer = carrBuffer;
-    //}
-
-    //return FALSE;
 }
 
 VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string szInitialCwd)
 {
+    BOOL bIsGroupSession;
     BOOL bIsChildCreated;
     CHAR carrSelfPath[MAX_PATH];
     HANDLE hChildStdoutRead;
     HANDLE hChildStdoutWrite;
     HANDLE hChildStdinRead;
     HANDLE hChildStdinWrite;
+    CommandType commandType;
     std::string szWindowName;
     std::string szWindowCommand;
     std::string szCommandOutput;
@@ -211,9 +198,13 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     // Create child process
     if (commandReq.GetGroupName().empty()) {
         szWindowName = commandReq.GetTargetAgent();
+        commandType = CommandType::Execute;
+        bIsGroupSession = FALSE;
     }
     else {
         szWindowName = commandReq.GetGroupName();
+        commandType = CommandType::GroupExecute;
+        bIsGroupSession = TRUE;
     }
 
     GetModuleFileNameA(NULL, carrSelfPath, MAX_PATH);
@@ -241,7 +232,7 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     CloseHandle(hChildStdinRead);
 
     // Get initial CWD
-    SendCommand(ControllerCommandReq(CommandType::Execute, commandReq.GetTargetAgent(), commandReq.GetGroupName(), ""));
+    SendCommand(ControllerCommandReq(commandType, commandReq.GetTargetAgent(), commandReq.GetGroupName(), ""));
     ReceiveData(szCommandOutput);
     WriteToChild(hChildStdinWrite, szCommandOutput);
 
@@ -250,8 +241,9 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
             break;
         }
 
-        SendCommand(ControllerCommandReq(CommandType::Execute, commandReq.GetTargetAgent(), commandReq.GetGroupName(), szWindowCommand));
+        SendCommand(ControllerCommandReq(commandType, commandReq.GetTargetAgent(), commandReq.GetGroupName(), szWindowCommand));
         ReceiveData(szCommandOutput);
+        //if group - add parsing!
 
         if (!WriteToChild(hChildStdinWrite, szCommandOutput)) {
             break;

@@ -36,7 +36,7 @@ int main() {
     WSADATA wsaData;
     SOCKET sock = INVALID_SOCKET;
     sockaddr_in serverAddr = {};
-    const CHAR* server_ip = "127.0.0.1";
+    const CHAR* server_ip = "192.168.20.5";
     const INT server_port = 3001;
     PowerShellSession psSession;
 

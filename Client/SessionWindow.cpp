@@ -83,6 +83,7 @@ VOID SessionWindow::GetUserCommands()
 	std::string szCommand;
 
 	while (bIsRunning) {
+		WriteConsoleA(hConsoleOut, "> ", 2, &dwBytesWritten, NULL);
 		ReadConsoleA(hConsoleIn, carrCommand, sizeof(carrCommand) - 1, &dwBytesRead, NULL);
 
 		if (dwBytesRead > 2) {

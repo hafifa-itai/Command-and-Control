@@ -10,10 +10,12 @@ public:
 	BOOL DeleteGroup(std::string szGroupName);
 	VOID AddConnectionToGroup(std::string szGroupName, AgentConnection* lpAgentConnection);
 	BOOL RemoveConnectionFromGroup(std::string szGroupName, AgentConnection* lpAgentConnection);
-	BOOL BroadcastToGroup(std::string szGroupName, std::string szCommand);
+	BOOL BroadcastToGroup(std::string szGroupName, std::string szCommand, std::string& szOutput);
 	BOOL ListGroupMembers(std::string szGroupName, std::string& szOutput);
 	VOID GetGroupNames(std::string& szOutput);
 	BOOL CheckGroupExists(std::string szGroupName);
+	VOID ParseAgentResponse(std::string& szOutCleanedResp, std::string& szCwd);
+	
 
 private:
 	std::mutex mGroupMapMutex;

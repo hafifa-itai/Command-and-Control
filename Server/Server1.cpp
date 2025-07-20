@@ -226,6 +226,7 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
     std::string szResponse;
     const nlohmann::json jsonData = nlohmann::json::parse(szData);
     ControllerCommandReq controllerCommand = jsonData;
+    // TODO: change to switch case
     
     if (controllerCommand.GetCommandType() == CommandType::Quit) {
         bIsRunning = FALSE;
@@ -331,6 +332,17 @@ VOID Server1::HandleControllerCommand(std::string szData, ControllerConnection* 
         //ParseAgentResponse(szResponse);
         //std::cout << "cwd: " << szCwd;
     }
+    else if (controllerCommand.GetCommandType() == CommandType::GroupExecute) {
+        //std::string szCwd;
+        BOOL bIsGroupExists = groupManager.CheckGroupExists(controllerCommand.GetGroupName());
+
+        if (bIsGroupExists) {
+            groupManager.BroadcastToGroup(controllerCommand.GetGroupName(), controllerCommand.GetParameters(), szResponse);
+        }
+        else {
+            szResponse = "[!] Group " + controllerCommand.GetGroupName() + " doesn't exist\n";
+        }
+    }
 
     conn->SendData(szResponse);
 }
@@ -353,39 +365,7 @@ std::string Server1::GetActiveAgentSockets() {
     return szResult;
 }
 
-VOID Server1::ParseAgentResponse(std::string szResponse, std::string& szOutput)
-{
-    szOutput.clear();
 
-    // 2. Find the last non-whitespace character to gracefully handle trailing empty lines.
-    size_t last_char_pos = szResponse.find_last_not_of(" \t\r\n");
-
-    // Handle case where the source is empty or contains only whitespace.
-    //if (last_char_pos == std::string::npos) {
-    //    szResponse.clear();
-    //    return;
-    //}
-
-    // 3. Trim the source string to get rid of trailing empty lines.
-    // This makes finding the last *real* line of text reliable.
-    szResponse.resize(last_char_pos + 1);
-
-    // 4. Find the last newline character in the now-trimmed string.
-    size_t last_newline_pos = szResponse.find_last_of('\n');
-
-    if (last_newline_pos == std::string::npos) {
-        // Case A: No newline was found. The entire string is the last line.
-        szOutput = szResponse;
-    }
-    else {
-        // Case B: A newline was found.
-        // The last line is the substring *after* this newline character.
-        szOutput = szResponse.substr(last_newline_pos + 1);
-
-        // Remove the last line AND the preceding newline character from the source.
-        szResponse.erase(last_newline_pos);
-    }
-}
 
 
 std::vector<AgentConnection*>::iterator Server1::FindConnectionFromSocketStr(std::string szSocket) {
@@ -575,7 +555,7 @@ VOID Server1::UserRunCommandOnGroup(const std::vector<std::string>& arrParameter
         }
     }
 
-    groupManager.BroadcastToGroup(szGroupName, szCommand);
+    //groupManager.BroadcastToGroup(szGroupName, szCommand);
     
 }
 
