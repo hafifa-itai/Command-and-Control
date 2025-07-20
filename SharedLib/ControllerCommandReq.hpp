@@ -26,11 +26,7 @@ private:
 };
 
 inline VOID to_json(nlohmann::json& j, const ControllerCommandReq& req) {
-	// You can serialize the enum as its string representation for readability
 	j["commandType"] = static_cast<int>(req.GetCommandType());
-	// Or, if you prefer the integer value:
-	// j["commandType"] = static_cast<int>(req.GetCommandType());
-
 	j["targetAgent"] = req.GetTargetAgent();
 	j["groupName"] = req.GetGroupName();
 	j["parameters"] = req.GetParameters();

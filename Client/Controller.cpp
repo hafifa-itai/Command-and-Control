@@ -13,6 +13,7 @@ Controller::~Controller() {
     if (sock != INVALID_SOCKET) {
         closesocket(sock);
     }
+
     WSACleanup();
 }
 
@@ -32,7 +33,6 @@ BOOL Controller::Connect()
 
     if (sock == INVALID_SOCKET) {
         std::cerr << "Socket creation failed\n";
-        WSACleanup();
 
         return FALSE;
     }
@@ -42,16 +42,12 @@ BOOL Controller::Connect()
 
     if (inet_pton(AF_INET, szServerIp.c_str(), &serverAddr.sin_addr) != 1) {
         std::cerr << "Invalid IP address\n";
-        closesocket(sock);
-        WSACleanup();
 
         return FALSE;
     }
 
     if (connect(sock, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
         std::cerr << "Connection to server failed\n";
-        closesocket(sock);
-        WSACleanup();
 
         return FALSE;
     }
@@ -63,10 +59,131 @@ BOOL Controller::Connect()
 VOID Controller::Run()
 {
     while (bIsRunning) {
-        ControllerCommandReq commandReq = inputHandler.CreateCommandObject();
+        ControllerCommandReq commandReq = ValidateUserInput();
         HandleCommandObject(commandReq);
     }
 }
+
+ControllerCommandReq Controller::ValidateUserInput()
+{
+    CommandType commandType;
+    std::string param;
+    std::string szInput;
+    std::string szCommand;
+    ControllerCommandReq commandReq;
+    std::vector<std::string> parameters;
+
+    while (TRUE) {
+
+        std::cout << "Enter Full command: ";
+        std::getline(std::cin, szInput);
+
+        std::istringstream iss(szInput);
+        iss >> szCommand;
+
+        while (iss >> param) {
+            parameters.push_back(param);
+        }
+
+        for (const auto& p : parameters) {
+            std::cout << "- " << p << "\n";
+        }
+
+        commandType = StringToCommandType(szCommand);
+
+        switch (commandType) {
+        case CommandType::Quit:
+            return ControllerCommandReq(CommandType::Quit, "", "", "");
+
+        case CommandType::Close:
+            if (parameters.size() != 1) {
+                std::cout << "[!] Invalid parameters for close command\n";
+                break;
+            }
+            else {
+                return ControllerCommandReq(CommandType::Close, parameters[0], "", "");
+            }
+
+        case CommandType::GroupCreate:
+            if (parameters.size() == 1) {
+                return ControllerCommandReq(CommandType::GroupCreate, "", parameters[0], "");
+            }
+            else {
+                std::cout << "[!] Invalid parameters for group-create command\n";
+                break;
+            }
+            
+
+        case CommandType::GroupDelete:
+            if (parameters.size() == 1) {
+                return ControllerCommandReq(CommandType::GroupDelete, "", parameters[0], "");
+            }
+            else {
+                std::cout << "[!] Invalid parameters for group-delete command\n";
+                break;
+            }
+
+        case CommandType::GroupAdd:
+            if (parameters.size() == 2) {
+                return ControllerCommandReq(CommandType::GroupAdd, parameters[1], parameters[0], "");
+            }
+            else {
+                std::cout << "[!] Invalid parameters for group-add command\n";
+                break;
+            }
+
+        case CommandType::GroupRemove:
+            if (parameters.size() == 2) {
+                return ControllerCommandReq(CommandType::GroupRemove, parameters[1], parameters[0], "");
+            }
+            else {
+                std::cout << "[!] Invalid parameters for group-remove command\n";
+                break;
+            }
+
+        case CommandType::ListGroup:
+            if (parameters.size() == 1) {
+                return ControllerCommandReq(CommandType::ListGroup, "", parameters[0], "");
+            }
+            else {
+                std::cout << "[!] Invalid parameters for group-list command\n";
+                break;
+            }
+
+        case CommandType::ListGroupNames:
+            return ControllerCommandReq(CommandType::ListGroupNames, "", "", "");
+
+        case CommandType::List:
+            return ControllerCommandReq(CommandType::List, "", "", "");
+
+        case CommandType::Execute:
+            if (parameters.size() != 1) {
+                std::cout << "[!] Invalid parameters for cmd command\n";
+                break;
+            }
+            else {
+                return ControllerCommandReq(CommandType::OpenCmdWindow, parameters[0], "", "");
+            }
+
+        case CommandType::GroupExecute:
+            if (parameters.size() != 1) {
+                std::cout << "[!] Invalid parameters for group-cmd command\n";
+                break;
+            }
+            else {
+                return ControllerCommandReq(CommandType::OpenCmdWindow, "", parameters[0], "");
+            }
+
+        case CommandType::Man:
+            return ControllerCommandReq(CommandType::Man, "", "", "");
+
+        default:
+            std::cout << "[!] Unrecognized command\n";
+            break;
+        }
+    }
+}
+
 
 VOID Controller::HandleCommandObject(ControllerCommandReq commandReq)
 {
@@ -115,16 +232,16 @@ BOOL Controller::SendCommand(ControllerCommandReq commandReq)
     if (sock == INVALID_SOCKET) {
         return FALSE;
     }
-    szCommand = j.dump(4);
-    //std::cout << szCommand << "\n";
+    szCommand = j.dump(VERBOSE_JSON);
     iBytesSent = send(sock, szCommand.c_str(), static_cast<int>(szCommand.size()), 0);
+
     return iBytesSent == szCommand.size();
 }
 
 BOOL Controller::ReceiveData(std::string& szOutBuffer) {
 
     INT iBytesReceived;
-    CHAR carrBuffer[4096];
+    CHAR carrBuffer[MAX_BUFFER_SIZE];
 
     if (sock == INVALID_SOCKET) {
         return FALSE;
@@ -150,9 +267,7 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
             iTotalBytesReceived += iBytesReceived;
         }
 
-        //std::cout << "received:\n" << szOutBuffer;
         return TRUE;
-
     }
 
     return FALSE;
@@ -180,22 +295,18 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     saAttr.bInheritHandle = TRUE;
     saAttr.lpSecurityDescriptor = NULL;
 
-    // Create pipes for stdout
     CreatePipe(&hChildStdoutRead, &hChildStdoutWrite, &saAttr, 0);
     SetHandleInformation(hChildStdoutRead, HANDLE_FLAG_INHERIT, 0);
 
-    // Create pipes for stdin
     CreatePipe(&hChildStdinRead, &hChildStdinWrite, &saAttr, 0);
     SetHandleInformation(hChildStdinWrite, HANDLE_FLAG_INHERIT, 0);
 
-    // Set up the process startup info
     siStartInfo.cb = sizeof(STARTUPINFOA);
     siStartInfo.hStdError = hChildStdoutWrite;
     siStartInfo.hStdOutput = hChildStdoutWrite;
     siStartInfo.hStdInput = hChildStdinRead;
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    // Create child process
     if (commandReq.GetGroupName().empty()) {
         szWindowName = commandReq.GetTargetAgent();
         commandType = CommandType::Execute;
@@ -243,7 +354,6 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
 
         SendCommand(ControllerCommandReq(commandType, commandReq.GetTargetAgent(), commandReq.GetGroupName(), szWindowCommand));
         ReceiveData(szCommandOutput);
-        //if group - add parsing!
 
         if (!WriteToChild(hChildStdinWrite, szCommandOutput)) {
             break;
@@ -292,4 +402,11 @@ VOID Controller::ShowMan()
     std::cout << "[*] man - Show this man page\n";
 }
 
+CommandType Controller::StringToCommandType(const std::string& szInput) {
+    auto it = StringToCommandTypeMap.find(szInput);
+    if (it != StringToCommandTypeMap.end()) {
+        return it->second;
+    }
+    return CommandType::Unknown;
+}
 

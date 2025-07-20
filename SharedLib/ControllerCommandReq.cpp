@@ -51,22 +51,3 @@ VOID ControllerCommandReq::SetGroupName(const std::string& group) {
 VOID ControllerCommandReq::SetParameters(const std::string& params) {
 	szParameters = params;
 }
-
-//VOID to_json(nlohmann::json& j, const ControllerCommandReq& req) {
-//	// You can serialize the enum as its string representation for readability
-//	j["commandType"] = static_cast<int>(req.GetCommandType());
-//	// Or, if you prefer the integer value:
-//	// j["commandType"] = static_cast<int>(req.GetCommandType());
-//
-//	j["targetAgent"] = req.GetTargetAgent();
-//	j["groupName"] = req.GetGroupName();
-//	j["parameters"] = req.GetParameters();
-//}
-
-
-//VOID from_json(const nlohmann::json& j, ControllerCommandReq& req) {
-//	req.SetCommandType(static_cast<CommandType>(j.value("commandType", CommandType::Unknown)));
-//	req.SetTargetAgent(j.value("targetAgent", ""));
-//	req.SetGroupName(j.value("groupName", ""));
-//	req.SetParameters(j.value("parameters", ""));
-//}

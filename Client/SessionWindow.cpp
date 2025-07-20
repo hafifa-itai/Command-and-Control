@@ -36,7 +36,7 @@ SessionWindow::~SessionWindow()
 }
 
 VOID SessionWindow::PrintParentMessage() {
-	CHAR carrResponse[4096];
+	CHAR carrResponse[MAX_BUFFER_SIZE];
 	DWORD dwBytesWritten;
 	DWORD dwBytesRead;
 	DWORD dwBytesAvailable;
@@ -67,7 +67,7 @@ VOID SessionWindow::PrintParentMessage() {
 VOID SessionWindow::GetUserCommands()
 {
 	BOOL bIsNewLine;
-	CHAR carrCommand[512];
+	CHAR carrCommand[MAX_BUFFER_SIZE];
 	DWORD dwBytesRead;
 	DWORD dwBytesWritten;
 	std::string szCommand;

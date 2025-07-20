@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pch.h"
+#include "Constants.hpp"
 
 class SessionWindow
 {
@@ -15,7 +16,6 @@ private:
 	BOOL bIsRunning;
 	HANDLE hPipeFromParent;
 	HANDLE hPipeToParent;
-
 	HANDLE hConsoleOut;
 	HANDLE hConsoleIn;
 };

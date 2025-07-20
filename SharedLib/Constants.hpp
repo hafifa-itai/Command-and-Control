@@ -7,6 +7,7 @@
 #define CONTROLLER_INDEX 0
 #define AGENT_INDEX 1
 #define GET_CWD ";$PWD.Path;"
+#define VERBOSE_JSON 4
 
 
 enum class CommandType : int {
@@ -25,4 +26,20 @@ enum class CommandType : int {
     ListGroupNames,
     Man,
     SyntaxError
+};
+
+
+const std::unordered_map<std::string, CommandType> StringToCommandTypeMap = {
+    {"quit",         CommandType::Quit},
+    {"close",        CommandType::Close},
+    {"cmd",          CommandType::Execute},
+    {"group-cmd",    CommandType::GroupExecute},
+    {"list",         CommandType::List},
+    {"group-create", CommandType::GroupCreate},
+    {"group-delete", CommandType::GroupDelete},
+    {"group-add",    CommandType::GroupAdd},
+    {"group-remove", CommandType::GroupRemove},
+    {"group-list",   CommandType::ListGroup},
+    {"groups",       CommandType::ListGroupNames},
+    {"man",          CommandType::Man}
 };
