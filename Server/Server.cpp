@@ -25,8 +25,8 @@ INT Server::StartServer() {
     CreateListeningSocket(AGENT_PORT, arrListeningSockets[1]);
 
     bIsRunning = TRUE;
-    arrThreads[0] = std::thread(&Server::ListenForConnections, this, 3000, arrListeningSockets[0]);
-    arrThreads[1] = std::thread(&Server::ListenForConnections, this ,3001, arrListeningSockets[1]);
+    arrThreads[0] = std::thread(&Server::ListenForConnections, this, CONTROLLER_PORT, arrListeningSockets[0]);
+    arrThreads[1] = std::thread(&Server::ListenForConnections, this , AGENT_PORT, arrListeningSockets[1]);
 
     std::cout << "[+] Listening for clients on port 3000\n";
     std::cout << "[+] Listening for agents on port 3001\n";
@@ -84,7 +84,7 @@ BOOL Server::ListenForConnections(INT iPort, SOCKET listeningSocket)
 
         // Check for closed connections or new data:
         if (iPort == AGENT_PORT) {
-            CheckForClosedAgentConnections();
+            CheckForAgentConnections();
         }
         else {
             CheckForControllerConnections();
@@ -116,7 +116,21 @@ VOID Server::AcceptNewConnections(SOCKET listeningSocket, INT iFdSetIndex)
 }
 
 
-VOID Server::CheckForClosedAgentConnections()
+INT Server::AssignSession(std::string szHostName)
+{
+    INT iMaxSession = 0;
+
+    for (AgentConnection* conn : arrAgentConnections) {
+        if (conn->GetHostName() == szHostName && conn->GetSession() > iMaxSession) {
+            iMaxSession = conn->GetSession();
+        }
+    }
+
+    return iMaxSession + 1;
+
+}
+
+VOID Server::CheckForAgentConnections()
 {
     std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
@@ -134,7 +148,15 @@ VOID Server::CheckForClosedAgentConnections()
             }
             else {
                 if (!szData.empty()) {
-                    conn->EnqueueIncomingData(szData);
+                    if (conn->GetSession() != 0) {
+                        conn->EnqueueIncomingData(szData);
+                    }
+                    else {
+                        INT iSession = AssignSession(szData);
+                        conn->SetSession(iSession);
+                        conn->SetHostName(szData);
+                        std::cout << "[*] session: " << conn->GetSession() << " host: " << conn->GetHostName() << "\n";
+                    }
                 }
 
                 ++connectionsIterator;
@@ -219,7 +241,7 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
     std::string szResponse;
     const nlohmann::json jsonData = nlohmann::json::parse(szData);
     ControllerCommandReq controllerCommand = jsonData;
-    // TODO: change to switch case
+
     switch (controllerCommand.GetCommandType()) {
     case CommandType::Quit:
         bIsRunning = FALSE;
@@ -370,8 +392,6 @@ std::string Server::GetActiveAgentSockets() {
 
     return szResult;
 }
-
-
 
 
 std::vector<AgentConnection*>::iterator Server::FindConnectionFromSocketStr(std::string szSocket) {

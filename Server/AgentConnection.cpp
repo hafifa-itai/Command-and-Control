@@ -7,6 +7,11 @@ AgentConnection::AgentConnection(SOCKET agentSocket)
 AgentConnection::~AgentConnection() {
 }
 
+INT AgentConnection::GetSession()
+{
+    return iSession;
+}
+
 BOOL AgentConnection::SendData(const std::string& command) {
     INT iBytesSent;
     if (socket == INVALID_SOCKET) {
@@ -81,6 +86,21 @@ VOID AgentConnection::RemoveFromGroup(std::string szGroupName)
     if (groupsIterator != arrGroups.end()) {
         arrGroups.erase(groupsIterator);
     }
+}
+
+VOID AgentConnection::SetSession(INT iNewSession)
+{
+    iSession = iNewSession;
+}
+
+VOID AgentConnection::SetHostName(std::string szNewHostName)
+{
+    szHostname = szNewHostName;
+}
+
+std::string AgentConnection::GetHostName()
+{
+    return szHostname;
 }
 
 std::vector<std::string> AgentConnection::GetGroups()

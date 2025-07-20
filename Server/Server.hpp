@@ -20,7 +20,8 @@ public:
 	std::vector<AgentConnection*>::iterator FindConnectionFromSocketStr(std::string szSocket);
 
 	// Agent connections:
-	VOID CheckForClosedAgentConnections();
+	INT AssignSession(std::string szHostName);
+	VOID CheckForAgentConnections();
 	VOID AddAgentConnection(SOCKET socket);
 	std::vector<AgentConnection*>::iterator RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator);
 	VOID RemoveConnectionFromAllGroups(AgentConnection* conn);

