@@ -5,6 +5,9 @@ Server::~Server() {
     for (AgentConnection* conn : arrAgentConnections) {
         delete conn;
     }
+    for (ControllerConnection* conn : arrControllerConnections) {
+        delete conn;
+    }
 }
 
 
@@ -18,8 +21,8 @@ INT Server::StartServer() {
         return 1;
     }
 
-    CreateListeningSocket(3000, arrListeningSockets[0]);
-    CreateListeningSocket(3001, arrListeningSockets[1]);
+    CreateListeningSocket(CONTROLLER_PORT, arrListeningSockets[0]);
+    CreateListeningSocket(AGENT_PORT, arrListeningSockets[1]);
 
     bIsRunning = TRUE;
     arrThreads[0] = std::thread(&Server::ListenForConnections, this, 3000, arrListeningSockets[0]);

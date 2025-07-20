@@ -73,23 +73,25 @@ VOID SessionWindow::GetUserCommands()
 	std::string szCommand;
 
 	while (bIsRunning) {
-		WriteConsoleA(hConsoleOut, "> ", 2, &dwBytesWritten, NULL);
 		ReadConsoleA(hConsoleIn, carrCommand, sizeof(carrCommand) - 1, &dwBytesRead, NULL);
 
 		if (dwBytesRead > 2) {
 			carrCommand[dwBytesRead - 2] = '\0';
 
 			szCommand = std::string(carrCommand);
-
 			if (szCommand == "exit") {
 				bIsRunning = FALSE;
 				break;
 			}
-			if (!WriteFile(hPipeToParent, szCommand.c_str(), szCommand.length(), &dwBytesWritten, NULL)) {
+			else if (!WriteFile(hPipeToParent, szCommand.c_str(), szCommand.length(), &dwBytesWritten, NULL)) {
 				bIsRunning = FALSE;			}
 		}
 		else if (dwBytesRead != 2){
 			bIsRunning = FALSE;
 		}
+		else {
+			WriteConsoleA(hConsoleOut, "> ", 2, &dwBytesWritten, NULL);
+		}
+
 	}
 }

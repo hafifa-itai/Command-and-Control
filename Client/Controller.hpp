@@ -26,6 +26,7 @@ private:
 	INT iServerPort;
 	BOOL bIsRunning;
 	SOCKET sock;
+	HANDLE hJobHandle;
 	std::string szServerIp;
 	std::vector<std::thread> arrWindowSessionThreads;
 };

@@ -290,6 +290,7 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     STARTUPINFOA siStartInfo{};
     SECURITY_ATTRIBUTES saAttr{};
     PROCESS_INFORMATION piProcInfo{};
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = {};
 
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
@@ -326,7 +327,7 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
         NULL,
         NULL,
         TRUE,
-        CREATE_NEW_CONSOLE,
+        CREATE_NEW_CONSOLE | CREATE_SUSPENDED,
         NULL,
         NULL,
         &siStartInfo,
@@ -337,6 +338,12 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
         std::cerr << "Failed to start PowerShell.\n";
         exit(1);
     }
+
+    hJobHandle = CreateJobObject(NULL, NULL);
+    jobInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    SetInformationJobObject(hJobHandle, JobObjectExtendedLimitInformation, &jobInfo, sizeof(jobInfo));
+    AssignProcessToJobObject(hJobHandle, piProcInfo.hProcess);
+    ResumeThread(piProcInfo.hThread);
 
     // Close unused pipe ends
     CloseHandle(hChildStdoutWrite);
