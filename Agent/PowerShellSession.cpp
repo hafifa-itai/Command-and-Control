@@ -5,43 +5,33 @@
 #include <chrono>
 #include <algorithm>
 
-// Define a macro for safer handle closing
-#define CLOSE_HANDLE(handle) \
-    if (handle && handle != INVALID_HANDLE_VALUE) { \
-        CloseHandle(handle); \
-        handle = NULL; \
-    }
 
 PowerShellSession::PowerShellSession()
 {
     BOOL bIsPsCreated;
-    SECURITY_ATTRIBUTES saAttr{};
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
-
     HANDLE hChildStdoutWrite;
     HANDLE hChildStdinRead;
     HANDLE hChildStdinWriteTmp;
     HANDLE hChildStdoutReadTmp;
+    STARTUPINFOA siStartInfo{};
+    SECURITY_ATTRIBUTES saAttr{};
 
-    // Create pipes for stdout
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
     CreatePipe(&hChildStdoutReadTmp, &hChildStdoutWrite, &saAttr, 0);
     SetHandleInformation(hChildStdoutReadTmp, HANDLE_FLAG_INHERIT, 0);
 
-    // Create pipes for stdin
     CreatePipe(&hChildStdinRead, &hChildStdinWriteTmp, &saAttr, 0);
     SetHandleInformation(hChildStdinWriteTmp, HANDLE_FLAG_INHERIT, 0);
 
-    // Set up the process startup info
-    STARTUPINFOA siStartInfo{};
     siStartInfo.cb = sizeof(STARTUPINFOA);
     siStartInfo.hStdError = hChildStdoutWrite;
     siStartInfo.hStdOutput = hChildStdoutWrite;
     siStartInfo.hStdInput = hChildStdinRead;
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    // Create PowerShell process
     CHAR carrCommand[] = "powershell.exe -NoLogo -NoExit -Command -";
     bIsPsCreated = CreateProcessA(
         NULL,
@@ -60,7 +50,6 @@ PowerShellSession::PowerShellSession()
         exit(1);
     }
 
-    // Close unused pipe ends
     CloseHandle(hChildStdoutWrite);
     CloseHandle(hChildStdinRead);
 

@@ -1,10 +1,7 @@
 #pragma once
 
-#include <windows.h>
-#include <iostream>
-#include <string>
-#include <algorithm>
-#define GET_CWD ";$PWD.Path;"
+#include "pch.h"
+#include "Constants.hpp"
 
 class PowerShellSession
 {

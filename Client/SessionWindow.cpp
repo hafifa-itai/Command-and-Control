@@ -62,16 +62,6 @@ VOID SessionWindow::PrintParentMessage() {
 			Sleep(10);
 		}
 	}
-
-	//while (TRUE) {
-	//	if (ReadFile(hPipeFromParent, carrResponse, sizeof(carrResponse), &dwBytesRead, NULL) && dwBytesRead > 0) {
-	//		WriteConsoleA(hConsoleOut, carrResponse, dwBytesRead, &dwBytesWritten, NULL);
-	//	}
-	//	else {
-	//		bIsRunning = FALSE;
-	//		break;
-	//	}
-	//}
 }
 
 VOID SessionWindow::GetUserCommands()
