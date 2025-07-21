@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "ControllerCommandReq.hpp"
 #include "SessionWindow.hpp"
+#include "StringUtils.hpp"
 
 
 class Controller {
@@ -16,10 +17,10 @@ public:
 	VOID ShowMan();
 	BOOL Connect();
 	BOOL SendCommand(ControllerCommandReq commandReq);
-	BOOL ReceiveData(std::string& szoutBuffer);
-	BOOL WriteToChild(HANDLE hChildStdinWrite, const std::string& szData);
-	BOOL ReadFromChild(HANDLE hChildStdoutRead, std::string& szoutCommand);
-	CommandType StringToCommandType(const std::string& szInput);
+	BOOL ReceiveData(std::wstring& wszOutBuffer);
+	BOOL WriteToChild(HANDLE hChildStdinWrite, const std::wstring& wszData);
+	BOOL ReadFromChild(HANDLE hChildStdoutRead, std::wstring& wszOutCommand);
+	CommandType StringToCommandType(const std::wstring& wszInput);
 	ControllerCommandReq ValidateUserInput();
 
 private:

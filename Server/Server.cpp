@@ -116,12 +116,12 @@ VOID Server::AcceptNewConnections(SOCKET listeningSocket, INT iFdSetIndex)
 }
 
 
-INT Server::AssignSession(std::string szHostName)
+INT Server::AssignSession(std::wstring wszHostName)
 {
     INT iMaxSession = 0;
 
     for (AgentConnection* conn : arrAgentConnections) {
-        if (conn->GetHostName() == szHostName && conn->GetSession() > iMaxSession) {
+        if (conn->GetHostName() == wszHostName && conn->GetSession() > iMaxSession) {
             iMaxSession = conn->GetSession();
         }
     }
@@ -138,22 +138,22 @@ VOID Server::CheckForAgentConnections()
         AgentConnection* conn = *connectionsIterator;
 
         if (IsSocketInSet(conn->GetSocket(), AGENT_INDEX)) {
-            std::string szData;
+            std::wstring wszData;
             BOOL bIsConnectionAlive;
-            bIsConnectionAlive = conn->ReceiveData(szData);
+            bIsConnectionAlive = conn->ReceiveData(wszData);
 
             if (!bIsConnectionAlive) {
                 connectionsIterator = RemoveAgentConnection(connectionsIterator);
             }
             else {
-                if (!szData.empty()) {
+                if (!wszData.empty()) {
                     if (conn->GetSession() != 0) {
-                        conn->EnqueueIncomingData(szData);
+                        conn->EnqueueIncomingData(wszData);
                     }
                     else {
-                        INT iSession = AssignSession(szData);
+                        INT iSession = AssignSession(wszData);
                         conn->SetSession(iSession);
-                        conn->SetHostName(szData);
+                        conn->SetHostName(wszData);
                     }
                 }
 
@@ -175,16 +175,16 @@ VOID Server::CheckForControllerConnections()
         ControllerConnection* conn = *connectionsIterator;
 
         if (IsSocketInSet(conn->GetSocket(), CONTROLLER_INDEX)) {
-            std::string szData;
+            std::wstring wszData;
             BOOL bIsConnectionAlive;
-            bIsConnectionAlive = conn->ReceiveData(szData);
+            bIsConnectionAlive = conn->ReceiveData(wszData);
 
             if (!bIsConnectionAlive) {
                 connectionsIterator = RemoveControllerConnection(connectionsIterator);
             }
             else {
-                if (!szData.empty()) {
-                    HandleControllerCommand(szData, conn);
+                if (!wszData.empty()) {
+                    HandleControllerCommand(wszData, conn);
                 }
 
                 ++connectionsIterator;
@@ -227,33 +227,33 @@ std::vector<ControllerConnection*>::iterator Server::RemoveControllerConnection(
     return iterator;
 }
 
-VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* conn)
+VOID Server::HandleControllerCommand(std::wstring wszData, ControllerConnection* conn)
 {
     BOOL bIsCommandSuccess;
-    std::string szResponse;
-    const nlohmann::json jsonData = nlohmann::json::parse(szData);
+    std::wstring wszResponse;
+    const nlohmann::json jsonData = nlohmann::json::parse(wszData);
     ControllerCommandReq controllerCommand = jsonData;
 
     switch (controllerCommand.GetCommandType()) {
     case CommandType::Quit:
         bIsRunning = FALSE;
         DeleteAgentConnectionsFiles();
-        szResponse = "[*] Successfully killed server process\n";
+        wszResponse = L"[*] Successfully killed server process\n";
         break;
 
     case CommandType::Close: {
         bIsCommandSuccess = CloseConnection(controllerCommand.GetTargetAgent());
 
         if (bIsCommandSuccess) {
-            szResponse = "[*] Successfully closed connection with " + controllerCommand.GetTargetAgent() + "\n";
+            wszResponse = L"[*] Successfully closed connection with " + controllerCommand.GetTargetAgent() + L"\n";
         }
         else {
-            szResponse = "[!] Error closing connection with " + controllerCommand.GetTargetAgent() + "\n";
+            wszResponse = L"[!] Error closing connection with " + controllerCommand.GetTargetAgent() + L"\n";
         }
         break;
     }
     case CommandType::List:
-        szResponse = GetActiveAgentSockets();
+        wszResponse = GetActiveAgentSockets();
         break;
 
     case CommandType::GroupAdd: {
@@ -263,11 +263,11 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
         if (connectionIterator != arrAgentConnections.end()) {
             agentConn = *connectionIterator;
             groupManager.AddConnectionToGroup(controllerCommand.GetGroupName(), agentConn);
-            szResponse = "[*] Successfully added " + controllerCommand.GetTargetAgent() + " to " +
-                controllerCommand.GetGroupName() + " group\n";
+            wszResponse = L"[*] Successfully added " + controllerCommand.GetTargetAgent() + L" to " +
+                controllerCommand.GetGroupName() + L" group\n";
         }
         else {
-            szResponse = "[!] Agent " + controllerCommand.GetTargetAgent() + " does not exist\n";
+            wszResponse = L"[!] Agent " + controllerCommand.GetTargetAgent() + L" does not exist\n";
         }
         break;
     }
@@ -276,10 +276,10 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
         bIsCommandSuccess = groupManager.CreateGroup(controllerCommand.GetGroupName());
 
         if (!bIsCommandSuccess) {
-            szResponse = "[!] Group " + controllerCommand.GetGroupName() + " already exists\n";
+            wszResponse = L"[!] Group " + controllerCommand.GetGroupName() + L" already exists\n";
         }
         else {
-            szResponse = "[*] Successfully created group " + controllerCommand.GetGroupName() + "\n";
+            wszResponse = L"[*] Successfully created group " + controllerCommand.GetGroupName() + L"\n";
         }
         break;
 
@@ -287,10 +287,10 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
         bIsCommandSuccess = groupManager.DeleteGroup(controllerCommand.GetGroupName());
 
         if (!bIsCommandSuccess) {
-            szResponse = "[!] Group " + controllerCommand.GetGroupName() + " doesn't exist\n";
+            wszResponse = L"[!] Group " + controllerCommand.GetGroupName() + L" doesn't exist\n";
         }
         else {
-            szResponse = "[*] Successfully deleted group " + controllerCommand.GetGroupName() + "\n";
+            wszResponse = L"[*] Successfully deleted group " + controllerCommand.GetGroupName() + L"\n";
         }
         break;
 
@@ -303,35 +303,35 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
             bIsCommandSuccess = groupManager.RemoveConnectionFromGroup(controllerCommand.GetGroupName(), agentConn);
 
             if (bIsCommandSuccess) {
-                szResponse = "[*] Successfully removed " + controllerCommand.GetTargetAgent() + " to " +
-                    controllerCommand.GetGroupName() + " group\n";
+                wszResponse = L"[*] Successfully removed " + controllerCommand.GetTargetAgent() + L" to " +
+                    controllerCommand.GetGroupName() + L" group\n";
             }
             else {
-                szResponse = "[!] Group " + controllerCommand.GetGroupName() + " doesn't exist\n";
+                wszResponse = L"[!] Group " + controllerCommand.GetGroupName() + L" doesn't exist\n";
             }
         }
         else {
-            szResponse = "[!] Agent " + controllerCommand.GetTargetAgent() + " does not exist\n";
+            wszResponse = L"[!] Agent " + controllerCommand.GetTargetAgent() + L" does not exist\n";
         }
         break;
     }
 
     case CommandType::ListGroup:
-        bIsCommandSuccess = groupManager.ListGroupMembers(controllerCommand.GetGroupName(), szResponse);
+        bIsCommandSuccess = groupManager.ListGroupMembers(controllerCommand.GetGroupName(), wszResponse);
         break;
 
     case CommandType::ListGroupNames:
-        groupManager.GetGroupNames(szResponse);
+        groupManager.GetGroupNames(wszResponse);
         break;
 
     case CommandType::OpenCmdWindow:
         if (groupManager.CheckGroupExists(controllerCommand.GetGroupName()) ||
             FindConnectionFromSocketStr(controllerCommand.GetTargetAgent()) != arrAgentConnections.end())
         {
-            szResponse = "Found";
+            wszResponse = L"Found";
         }
         else {
-            szResponse = "Not found";
+            wszResponse = L"Not found";
         }
         break;
 
@@ -340,10 +340,10 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
 
         if (connectionIterator != arrAgentConnections.end()) {
             (*connectionIterator)->SendData(controllerCommand.GetParameters());
-            (*connectionIterator)->GetDataFromQueue(szResponse, -1);
+            (*connectionIterator)->GetDataFromQueue(wszResponse, -1);
         }
         else {
-            szResponse = "Connection Lost";
+            wszResponse = L"Connection Lost";
         }
         break;
     }
@@ -352,48 +352,48 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
         BOOL bIsGroupExists = groupManager.CheckGroupExists(controllerCommand.GetGroupName());
 
         if (bIsGroupExists) {
-            groupManager.BroadcastToGroup(controllerCommand.GetGroupName(), controllerCommand.GetParameters(), szResponse);
+            groupManager.BroadcastToGroup(controllerCommand.GetGroupName(), controllerCommand.GetParameters(), wszResponse);
         }
         else {
-            szResponse = "[!] Group " + controllerCommand.GetGroupName() + " doesn't exist\n";
+            wszResponse = L"[!] Group " + controllerCommand.GetGroupName() + L" doesn't exist\n";
         }
         break;
     }
 
     default:
-        szResponse = "[!] Server error occurred\n";
+        wszResponse = L"[!] Server error occurred\n";
         break;
     }
 
-    conn->SendData(szResponse);
+    conn->SendData(wszResponse);
 }
 
 
-std::string Server::GetActiveAgentSockets() {
-    std::string szResult;
+std::wstring Server::GetActiveAgentSockets() {
+    std::wstring wszResult;
 
     if (arrAgentConnections.size() == 0) {
-        szResult = "[+] No active sockets\n";
+        wszResult = L"[+] No active sockets\n";
     }
     else {
-        szResult = "[+] Active sockets:\n";
+        wszResult = L"[+] Active sockets:\n";
 
         for (AgentConnection* conn : arrAgentConnections) {
-            szResult += "[+] IP: " + conn->GetSocketStr() + " | Host: " + conn->GetHostNameSessionStr() + "\n";
+            wszResult += L"[+] IP: " + conn->GetSocketStr() + L" | Host: " + conn->GetHostNameSessionStr() + L"\n";
         }
     }
 
-    return szResult;
+    return wszResult;
 }
 
 
-std::vector<AgentConnection*>::iterator Server::FindConnectionFromSocketStr(std::string szSocket) {
+std::vector<AgentConnection*>::iterator Server::FindConnectionFromSocketStr(std::wstring wszSocket) {
     std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end(); ++connectionsIterator) {
         AgentConnection* conn = *connectionsIterator;
 
-        if (conn->GetSocketStr() == szSocket || conn->GetHostNameSessionStr() == szSocket) {
+        if (conn->GetSocketStr() == wszSocket || conn->GetHostNameSessionStr() == wszSocket) {
             return connectionsIterator;
         }
     }
@@ -419,8 +419,8 @@ VOID Server::RemoveConnectionFromAllGroups(AgentConnection* conn)
 }
 
 
-BOOL Server::CloseConnection(std::string szSocket) {
-    auto connectionsIterator = FindConnectionFromSocketStr(szSocket);
+BOOL Server::CloseConnection(std::wstring wszSocket) {
+    auto connectionsIterator = FindConnectionFromSocketStr(wszSocket);
     std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
 
     if (connectionsIterator != arrAgentConnections.end()) {

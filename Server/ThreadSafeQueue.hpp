@@ -4,11 +4,11 @@
 
 class ThreadSafeQueue {
 public:
-    VOID Push(std::string szData);
-    BOOL WaitAndPop(std::string& szResponse, INT iTimeoutMs);
+    VOID Push(std::wstring wszData);
+    BOOL WaitAndPop(std::wstring& wszResponse, INT iTimeoutMs);
 
 private:
     std::mutex mutex;
-    std::queue<std::string> queue;
+    std::queue<std::wstring> queue;
     std::condition_variable condition;
 };

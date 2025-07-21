@@ -7,7 +7,7 @@ public:
     ControllerConnection(SOCKET controllerSocket);
     ~ControllerConnection() override;
 
-    BOOL SendData(const std::string& command) override;
-    BOOL ReceiveData(std::string& szoutBuffer) override;
+    BOOL SendData(const std::wstring& wszCommand) override;
+    BOOL ReceiveData(std::wstring& szoutBuffer) override;
 };
 

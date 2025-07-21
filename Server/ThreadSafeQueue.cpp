@@ -1,6 +1,6 @@
 #include "ThreadSafeQueue.hpp"
 
-BOOL ThreadSafeQueue::WaitAndPop(std::string& szOutResponse, INT iTimeoutMs = -1) {
+BOOL ThreadSafeQueue::WaitAndPop(std::wstring& wszOutResponse, INT iTimeoutMs = -1) {
     std::unique_lock<std::mutex> lock(mutex);
 
     auto wait_condition = [this] { return !queue.empty(); };
@@ -14,14 +14,14 @@ BOOL ThreadSafeQueue::WaitAndPop(std::string& szOutResponse, INT iTimeoutMs = -1
         }
     }
 
-    szOutResponse = std::move(queue.front());
+    wszOutResponse = std::move(queue.front());
     queue.pop();
     return TRUE;
 }
 
-VOID ThreadSafeQueue::Push(std::string szData)
+VOID ThreadSafeQueue::Push(std::wstring wszData)
 {
 	std::lock_guard<std::mutex> lock(mutex);
-    queue.push(std::move(szData));
+    queue.push(std::move(wszData));
     condition.notify_one();
 }

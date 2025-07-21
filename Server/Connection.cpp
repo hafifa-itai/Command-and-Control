@@ -9,19 +9,19 @@ VOID Connection::GetSocketClientInfo(SocketClientInfo& outSocketClientInfo) {
     if (getpeername(socket, (sockaddr*)&addr, &addrSize) == 0) {
         inet_ntop(AF_INET, &(addr.sin_addr), carrIpStr, INET_ADDRSTRLEN);
         outSocketClientInfo.nPort = ntohs(addr.sin_port);
-        outSocketClientInfo.szIp = std::string(carrIpStr);
+        outSocketClientInfo.szIp = utf8_to_wstring(carrIpStr);
     }
     else {
         outSocketClientInfo.nPort = 0;
-        outSocketClientInfo.szIp = "";
+        outSocketClientInfo.szIp = L"";
     }
 }
 
-std::string Connection::GetSocketStr() {
+std::wstring Connection::GetSocketStr() {
     SOCKET socket = this->GetSocket();
     SocketClientInfo socketClientInfo;
     this->GetSocketClientInfo(socketClientInfo);
-    std::ostringstream oss;
-    oss << socketClientInfo.szIp << ":" << socketClientInfo.nPort;
+    std::wostringstream oss;
+    oss << socketClientInfo.szIp << L":" << std::to_wstring(socketClientInfo.nPort);
     return oss.str();
 }

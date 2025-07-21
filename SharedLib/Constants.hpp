@@ -9,10 +9,10 @@
 #define AGENT_INDEX 1
 #define GET_CWD ";$PWD.Path;"
 #define VERBOSE_JSON 4
-#define NOP_COMMAND "$null = $null"
-#define NOP_COMMAND_SIZE 13
-#define QUIT_COMMAND "quit"
-#define EXIT_COMMAND "exit"
+#define NOP_COMMAND L"$null = $null"
+#define NOP_COMMAND_SIZE 26
+#define QUIT_COMMAND L"quit"
+#define EXIT_COMMAND L"exit"
 #define MAX_MSG_SIZE 20 * 1024 * 1024 //20MB
 
 
@@ -35,18 +35,18 @@ enum class CommandType : int {
 };
 
 
-const std::unordered_map<std::string, CommandType> StringToCommandTypeMap = {
-    {"quit",         CommandType::Quit},
-    {"close",        CommandType::Close},
-    {"cmd",          CommandType::Execute},
-    {"group-cmd",    CommandType::GroupExecute},
-    {"list",         CommandType::List},
-    {"group-create", CommandType::GroupCreate},
-    {"group-delete", CommandType::GroupDelete},
-    {"group-add",    CommandType::GroupAdd},
-    {"group-remove", CommandType::GroupRemove},
-    {"group-list",   CommandType::ListGroup},
-    {"groups",       CommandType::ListGroupNames},
-    {"man",          CommandType::Man},
-    {"",             CommandType::NewLine}
+const std::unordered_map<std::wstring, CommandType> StringToCommandTypeMap = {
+    {L"quit",         CommandType::Quit},
+    {L"close",        CommandType::Close},
+    {L"cmd",          CommandType::Execute},
+    {L"group-cmd",    CommandType::GroupExecute},
+    {L"list",         CommandType::List},
+    {L"group-create", CommandType::GroupCreate},
+    {L"group-delete", CommandType::GroupDelete},
+    {L"group-add",    CommandType::GroupAdd},
+    {L"group-remove", CommandType::GroupRemove},
+    {L"group-list",   CommandType::ListGroup},
+    {L"groups",       CommandType::ListGroupNames},
+    {L"man",          CommandType::Man},
+    {L"",             CommandType::NewLine}
 };

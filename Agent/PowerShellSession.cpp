@@ -114,7 +114,7 @@ std::string PowerShellSession::RunCommand(const std::string& szCommand)
     DWORD dwBytesWritten;
     std::string szOutputBuffer;
     std::string szUniqueMarker = generateUniqueMarker();
-    std::string fullCommand = szCommand + GET_CWD +"\nWrite-Host '" + szUniqueMarker + "'\n";
+    std::string fullCommand = szCommand + GET_CWD + "\nWrite-Host '" + szUniqueMarker + "'\n";
 
     bIsWriteSuccess = WriteFile(
         hChildStdinWrite,

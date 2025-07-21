@@ -1,20 +1,20 @@
 #include "pch.h"
 #include "ControllerCommandReq.hpp"
 
-ControllerCommandReq::ControllerCommandReq(CommandType commandType, std::string szTargetAgent, std::string szGroupName, std::string szParameters)
+ControllerCommandReq::ControllerCommandReq(CommandType commandType, std::wstring szTargetAgent, std::wstring szGroupName, std::wstring szParameters)
 {
 	this->commandType = commandType;
-	this->szTargetAgent = szTargetAgent;
-	this->szGroupName = szGroupName;
-	this->szParameters = szParameters;
+	this->wszTargetAgent = szTargetAgent;
+	this->wszGroupName = szGroupName;
+	this->wszParameters = szParameters;
 }
 
 ControllerCommandReq::ControllerCommandReq()
 {
 	this->commandType = CommandType::Unknown;
-	this->szTargetAgent = "";
-	this->szGroupName = "";
-	this->szParameters = "";
+	this->wszTargetAgent = L"";
+	this->wszGroupName = L"";
+	this->wszParameters = L"";
 }
 
 CommandType ControllerCommandReq::GetCommandType() const
@@ -22,32 +22,32 @@ CommandType ControllerCommandReq::GetCommandType() const
 	return commandType;
 }
 
-std::string ControllerCommandReq::GetTargetAgent() const
+std::wstring ControllerCommandReq::GetTargetAgent() const
 {
-	return szTargetAgent;
+	return wszTargetAgent;
 }
 
-std::string ControllerCommandReq::GetGroupName() const
+std::wstring ControllerCommandReq::GetGroupName() const
 {
-	return szGroupName;
+	return wszGroupName;
 }
 
-std::string ControllerCommandReq::GetParameters() const
+std::wstring ControllerCommandReq::GetParameters() const
 {
-	return szParameters;
+	return wszParameters;
 }
 
 VOID ControllerCommandReq::SetCommandType(CommandType type) { 
 	commandType = type; 
 }
-VOID ControllerCommandReq::SetTargetAgent(const std::string& agent) { 
-	szTargetAgent = agent; 
+VOID ControllerCommandReq::SetTargetAgent(const std::wstring& agent) { 
+	wszTargetAgent = agent; 
 }
 
-VOID ControllerCommandReq::SetGroupName(const std::string& group) {
-	szGroupName = group;
+VOID ControllerCommandReq::SetGroupName(const std::wstring& group) {
+	wszGroupName = group;
 }
 
-VOID ControllerCommandReq::SetParameters(const std::string& params) {
-	szParameters = params;
+VOID ControllerCommandReq::SetParameters(const std::wstring& params) {
+	wszParameters = params;
 }

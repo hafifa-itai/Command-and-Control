@@ -8,35 +8,35 @@ ControllerConnection::ControllerConnection(SOCKET controllerSocket)
 ControllerConnection::~ControllerConnection() {
 }
 
-BOOL ControllerConnection::SendData(const std::string& command) {
+BOOL ControllerConnection::SendData(const std::wstring& wszCommand) {
     INT iBytesSent;
-    std::string szFinalData;
-
-    if (socket == INVALID_SOCKET) {
-        return false;
-    }
-
-    uint32_t uiNetMessageLen = htonl(command.size());
-    szFinalData = std::string(reinterpret_cast<char*>(&uiNetMessageLen), sizeof(uint32_t));
-    szFinalData += command;
-    iBytesSent = send(socket, szFinalData.data(), szFinalData.length(), 0);
-
-    return iBytesSent == szFinalData.size();
-}
-
-BOOL ControllerConnection::ReceiveData(std::string& szOutBuffer) {
-    INT iBytesReceived;
-    CHAR carrBuffer[MAX_BUFFER_SIZE];
+    std::wstring wszFinalData;
 
     if (socket == INVALID_SOCKET) {
         return FALSE;
     }
 
-    iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, 0);
+    uint32_t uiNetMessageLen = htonl(wszCommand.size() * sizeof(WCHAR));
+    wszFinalData = std::wstring(reinterpret_cast<WCHAR*>(&uiNetMessageLen), sizeof(uint32_t) / sizeof(WCHAR));
+    wszFinalData += wszCommand;
+    iBytesSent = send(socket, reinterpret_cast<const CHAR*>(wszFinalData.data()), wszFinalData.length() * sizeof(WCHAR), 0);
+
+    return iBytesSent == wszFinalData.size() * sizeof(WCHAR);
+}
+
+BOOL ControllerConnection::ReceiveData(std::wstring& wszOutBuffer) {
+    INT iBytesReceived;
+    WCHAR wcarrBuffer[MAX_BUFFER_SIZE];
+
+    if (socket == INVALID_SOCKET) {
+        return FALSE;
+    }
+
+    iBytesReceived = recv(socket, reinterpret_cast<CHAR*>(wcarrBuffer), sizeof(wcarrBuffer) - sizeof(WCHAR), 0);
 
     if (iBytesReceived > 0) {
-        carrBuffer[iBytesReceived] = '\0';
-        szOutBuffer = carrBuffer;
+        wcarrBuffer[iBytesReceived / sizeof(WCHAR)] = '\0';
+        wszOutBuffer = wcarrBuffer;
         
         return TRUE;
     }

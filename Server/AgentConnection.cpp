@@ -13,24 +13,24 @@ INT AgentConnection::GetSession()
 }
 
 
-BOOL AgentConnection::SendData(const std::string& command) {
+BOOL AgentConnection::SendData(const std::wstring& wszCommand) {
     INT iBytesSent;
     if (socket == INVALID_SOCKET) {
         return FALSE;
     }
 
-    if (command.empty()) {
-        iBytesSent = send(socket, NOP_COMMAND, NOP_COMMAND_SIZE, 0);
+    if (wszCommand.empty()) {
+        iBytesSent = send(socket, reinterpret_cast<const CHAR*>(NOP_COMMAND), NOP_COMMAND_SIZE, 0);
         return iBytesSent == NOP_COMMAND_SIZE;
     }
 
-    iBytesSent = send(socket, command.c_str(), static_cast<int>(command.size()), 0);
-    return iBytesSent == command.size();
+    iBytesSent = send(socket, reinterpret_cast<const CHAR*>(wszCommand.c_str()), static_cast<int>(wszCommand.size() * sizeof(WCHAR)), 0);
+    return iBytesSent == wszCommand.size() * sizeof(WCHAR);
 }
 
-BOOL AgentConnection::ReceiveData(std::string& szOutBuffer) {
+BOOL AgentConnection::ReceiveData(std::wstring& szOutBuffer) {
     INT iBytesReceived;
-    CHAR carrBuffer[MAX_BUFFER_SIZE];
+    WCHAR wcarrBuffer[MAX_BUFFER_SIZE];
 
     if (socket == INVALID_SOCKET) {
         return FALSE;
@@ -51,9 +51,9 @@ BOOL AgentConnection::ReceiveData(std::string& szOutBuffer) {
         }
 
         while (iTotalBytesReceived < uiHostMessageLen) {
-            iBytesReceived = recv(socket, carrBuffer, sizeof(carrBuffer) - 1, 0);
-            carrBuffer[iBytesReceived] = '\0';
-            szOutBuffer += carrBuffer;
+            iBytesReceived = recv(socket, reinterpret_cast<CHAR*>(wcarrBuffer), sizeof(wcarrBuffer) - sizeof(WCHAR), 0);
+            wcarrBuffer[iBytesReceived / sizeof(WCHAR)] = '\0';
+            szOutBuffer += wcarrBuffer;
             iTotalBytesReceived += iBytesReceived;
         }
 
@@ -64,25 +64,25 @@ BOOL AgentConnection::ReceiveData(std::string& szOutBuffer) {
 }
 
 
-BOOL AgentConnection::GetDataFromQueue(std::string& szOutResponse, INT iTimeoutMs)
+BOOL AgentConnection::GetDataFromQueue(std::wstring& wszOutResponse, INT iTimeoutMs)
 {
-    return qIncomingMessages.WaitAndPop(szOutResponse, iTimeoutMs);
+    return qIncomingMessages.WaitAndPop(wszOutResponse, iTimeoutMs);
 }
 
 
-VOID AgentConnection::EnqueueIncomingData(const std::string& szData) {
-    qIncomingMessages.Push(szData);
+VOID AgentConnection::EnqueueIncomingData(const std::wstring& wszData) {
+    qIncomingMessages.Push(wszData);
 }
 
 
-VOID AgentConnection::AddToGroup(std::string szGroupName) {
-    arrGroups.push_back(szGroupName);
+VOID AgentConnection::AddToGroup(std::wstring wszGroupName) {
+    arrGroups.push_back(wszGroupName);
 }
 
 
-VOID AgentConnection::RemoveFromGroup(std::string szGroupName)
+VOID AgentConnection::RemoveFromGroup(std::wstring wszGroupName)
 {
-    auto groupsIterator = std::find(arrGroups.begin(), arrGroups.end(), szGroupName);
+    auto groupsIterator = std::find(arrGroups.begin(), arrGroups.end(), wszGroupName);
     if (groupsIterator != arrGroups.end()) {
         arrGroups.erase(groupsIterator);
     }
@@ -95,25 +95,25 @@ VOID AgentConnection::SetSession(INT iNewSession)
 }
 
 
-VOID AgentConnection::SetHostName(std::string szNewHostName)
+VOID AgentConnection::SetHostName(std::wstring wszNewHostName)
 {
-    szHostname = szNewHostName;
+    wszHostname = wszNewHostName;
 }
 
 
-std::string AgentConnection::GetHostNameSessionStr()
+std::wstring AgentConnection::GetHostNameSessionStr()
 {
-    return GetHostName() + ":" + std::to_string(GetSession());
+    return GetHostName() + L":" + std::to_wstring(GetSession());
 }
 
 
-std::string AgentConnection::GetHostName()
+std::wstring AgentConnection::GetHostName()
 {
-    return szHostname;
+    return wszHostname;
 }
 
 
-std::vector<std::string> AgentConnection::GetGroups()
+std::vector<std::wstring> AgentConnection::GetGroups()
 {
     return arrGroups;
 }

@@ -67,42 +67,42 @@ VOID Controller::Run()
 ControllerCommandReq Controller::ValidateUserInput()
 {
     CommandType commandType;
-    std::string param;
-    std::string szInput;
-    std::string szCommand;
+    std::wstring wszCurrentParam;
+    std::wstring wszInput;
+    std::wstring wszCommand;
     ControllerCommandReq commandReq;
-    std::vector<std::string> parameters;
+    std::vector<std::wstring> wszArrParameters;
 
     while (TRUE) {
 
-        std::cout << "CMD> ";
-        std::getline(std::cin, szInput);
+        std::wcout << L"CMD> ";
+        std::getline(std::wcin, wszInput);
 
-        std::istringstream iss(szInput);
-        iss >> szCommand;
+        std::wistringstream iss(wszInput);
+        iss >> wszCommand;
 
-        while (iss >> param) {
-            parameters.push_back(param);
+        while (iss >> wszCurrentParam) {
+            wszArrParameters.push_back(wszCurrentParam);
         }
 
-        commandType = StringToCommandType(szCommand);
+        commandType = StringToCommandType(wszCommand);
 
         switch (commandType) {
         case CommandType::Quit:
-            return ControllerCommandReq(CommandType::Quit, "", "", "");
+            return ControllerCommandReq(CommandType::Quit, L"", L"", L"");
 
         case CommandType::Close:
-            if (parameters.size() != 1) {
+            if (wszArrParameters.size() != 1) {
                 std::cout << "[!] Invalid parameters for close command\n";
                 break;
             }
             else {
-                return ControllerCommandReq(CommandType::Close, parameters[0], "", "");
+                return ControllerCommandReq(CommandType::Close, wszArrParameters[0], L"", L"");
             }
 
         case CommandType::GroupCreate:
-            if (parameters.size() == 1) {
-                return ControllerCommandReq(CommandType::GroupCreate, "", parameters[0], "");
+            if (wszArrParameters.size() == 1) {
+                return ControllerCommandReq(CommandType::GroupCreate, L"", wszArrParameters[0], L"");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-create command\n";
@@ -111,8 +111,8 @@ ControllerCommandReq Controller::ValidateUserInput()
             
 
         case CommandType::GroupDelete:
-            if (parameters.size() == 1) {
-                return ControllerCommandReq(CommandType::GroupDelete, "", parameters[0], "");
+            if (wszArrParameters.size() == 1) {
+                return ControllerCommandReq(CommandType::GroupDelete, L"", wszArrParameters[0], L"");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-delete command\n";
@@ -120,8 +120,8 @@ ControllerCommandReq Controller::ValidateUserInput()
             }
 
         case CommandType::GroupAdd:
-            if (parameters.size() == 2) {
-                return ControllerCommandReq(CommandType::GroupAdd, parameters[1], parameters[0], "");
+            if (wszArrParameters.size() == 2) {
+                return ControllerCommandReq(CommandType::GroupAdd, wszArrParameters[1], wszArrParameters[0], L"");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-add command\n";
@@ -129,8 +129,8 @@ ControllerCommandReq Controller::ValidateUserInput()
             }
 
         case CommandType::GroupRemove:
-            if (parameters.size() == 2) {
-                return ControllerCommandReq(CommandType::GroupRemove, parameters[1], parameters[0], "");
+            if (wszArrParameters.size() == 2) {
+                return ControllerCommandReq(CommandType::GroupRemove, wszArrParameters[1], wszArrParameters[0], L"");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-remove command\n";
@@ -138,8 +138,8 @@ ControllerCommandReq Controller::ValidateUserInput()
             }
 
         case CommandType::ListGroup:
-            if (parameters.size() == 1) {
-                return ControllerCommandReq(CommandType::ListGroup, "", parameters[0], "");
+            if (wszArrParameters.size() == 1) {
+                return ControllerCommandReq(CommandType::ListGroup, L"", wszArrParameters[0], L"");
             }
             else {
                 std::cout << "[!] Invalid parameters for group-list command\n";
@@ -147,31 +147,31 @@ ControllerCommandReq Controller::ValidateUserInput()
             }
 
         case CommandType::ListGroupNames:
-            return ControllerCommandReq(CommandType::ListGroupNames, "", "", "");
+            return ControllerCommandReq(CommandType::ListGroupNames, L"", L"", L"");
 
         case CommandType::List:
-            return ControllerCommandReq(CommandType::List, "", "", "");
+            return ControllerCommandReq(CommandType::List, L"", L"", L"");
 
         case CommandType::Execute:
-            if (parameters.size() != 1) {
+            if (wszArrParameters.size() != 1) {
                 std::cout << "[!] Invalid parameters for cmd command\n";
                 break;
             }
             else {
-                return ControllerCommandReq(CommandType::OpenCmdWindow, parameters[0], "", "");
+                return ControllerCommandReq(CommandType::OpenCmdWindow, wszArrParameters[0], L"", L"");
             }
 
         case CommandType::GroupExecute:
-            if (parameters.size() != 1) {
+            if (wszArrParameters.size() != 1) {
                 std::cout << "[!] Invalid parameters for group-cmd command\n";
                 break;
             }
             else {
-                return ControllerCommandReq(CommandType::OpenCmdWindow, "", parameters[0], "");
+                return ControllerCommandReq(CommandType::OpenCmdWindow, L"", wszArrParameters[0], L"");
             }
 
         case CommandType::Man:
-            return ControllerCommandReq(CommandType::Man, "", "", "");
+            return ControllerCommandReq(CommandType::Man, L"", L"", L"");
 
         case CommandType::NewLine:
             break;
@@ -186,7 +186,7 @@ ControllerCommandReq Controller::ValidateUserInput()
 
 VOID Controller::HandleCommandObject(ControllerCommandReq commandReq)
 {
-    std::string szOutputBuffer;
+    std::wstring wszOutputBuffer;
     CommandType commandType = commandReq.GetCommandType();
 
     if (commandType == CommandType::Close || commandType == CommandType::List || commandType == CommandType::GroupAdd ||
@@ -194,8 +194,8 @@ VOID Controller::HandleCommandObject(ControllerCommandReq commandReq)
         commandType == CommandType::ListGroup || commandType == CommandType::ListGroupNames || commandType == CommandType::Quit) 
     {
         SendCommand(commandReq);
-        ReceiveData(szOutputBuffer);
-        std::cout << szOutputBuffer;
+        ReceiveData(wszOutputBuffer);
+        std::wcout << wszOutputBuffer;
     }
 
     if (commandType == CommandType::Unknown || commandType == CommandType::Man) {
@@ -204,9 +204,9 @@ VOID Controller::HandleCommandObject(ControllerCommandReq commandReq)
 
     if (commandType == CommandType::OpenCmdWindow) {
         SendCommand(commandReq);
-        ReceiveData(szOutputBuffer);
-        if (szOutputBuffer != "Found") {
-            std::cout << "[!] Could not find " << commandReq.GetTargetAgent() << commandReq.GetGroupName() << "\n";
+        ReceiveData(wszOutputBuffer);
+        if (wszOutputBuffer != L"Found") {
+            std::wcout << L"[!] Could not find " << commandReq.GetTargetAgent() << commandReq.GetGroupName() << L"\n";
         }
         else {
             arrWindowSessionThreads.emplace_back(&Controller::OpenSessionWindow, this, commandReq);
@@ -218,21 +218,23 @@ BOOL Controller::SendCommand(ControllerCommandReq commandReq)
 {
     INT iBytesSent;
     nlohmann::json j = commandReq;
-    std::string szCommand;
+    std::string szTempJson;
+    std::wstring wszCommand;
 
     if (sock == INVALID_SOCKET) {
         return FALSE;
     }
-    szCommand = j.dump(VERBOSE_JSON);
-    iBytesSent = send(sock, szCommand.c_str(), static_cast<int>(szCommand.size()), 0);
+    szTempJson = j.dump(VERBOSE_JSON);
+    wszCommand = utf8_to_wstring(szTempJson);
+    iBytesSent = send(sock, reinterpret_cast<const CHAR*>(wszCommand.c_str()), static_cast<int>(wszCommand.size() * sizeof(WCHAR)), 0);
 
-    return iBytesSent == szCommand.size();
+    return iBytesSent == wszCommand.size() * sizeof(WCHAR);
 }
 
-BOOL Controller::ReceiveData(std::string& szOutBuffer) {
+BOOL Controller::ReceiveData(std::wstring& wszOutBuffer) {
 
     INT iBytesReceived;
-    CHAR carrBuffer[MAX_BUFFER_SIZE];
+    WCHAR wcarrBuffer[MAX_BUFFER_SIZE];
 
     if (sock == INVALID_SOCKET) {
         return FALSE;
@@ -243,7 +245,7 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
     iBytesReceived = recv(sock, (LPSTR)&uiNetMessageLen, sizeof(uiNetMessageLen), 0);
 
     if (iBytesReceived > 0) {
-        szOutBuffer.clear();
+        wszOutBuffer.clear();
         uiHostMessageLen = ntohl(uiNetMessageLen);
         INT iTotalBytesReceived = 0;
 
@@ -252,9 +254,9 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
         }
 
         while (iTotalBytesReceived < uiHostMessageLen) {
-            iBytesReceived = recv(sock, carrBuffer, sizeof(carrBuffer) - 1, 0);
-            carrBuffer[iBytesReceived] = '\0';
-            szOutBuffer += carrBuffer;
+            iBytesReceived = recv(sock, reinterpret_cast<CHAR*>(wcarrBuffer), sizeof(wcarrBuffer) - sizeof(WCHAR), 0);
+            wcarrBuffer[iBytesReceived / sizeof(WCHAR)] = '\0';
+            wszOutBuffer += wcarrBuffer;
             iTotalBytesReceived += iBytesReceived;
         }
 
@@ -268,17 +270,17 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq)
 {
     BOOL bIsGroupSession;
     BOOL bIsChildCreated;
-    CHAR carrSelfPath[MAX_PATH];
+    WCHAR wcarrSelfPath[MAX_PATH];
     HANDLE hChildStdoutRead;
     HANDLE hChildStdoutWrite;
     HANDLE hChildStdinRead;
     HANDLE hChildStdinWrite;
     CommandType commandType;
-    std::string szWindowName;
-    std::string szWindowCommand;
-    std::string szCommandOutput;
-    std::string szProcessCommandLine;
-    STARTUPINFOA siStartInfo{};
+    std::wstring wszWindowName;
+    std::wstring wszWindowCommand;
+    std::wstring wszCommandOutput;
+    std::wstring wszProcessCommandLine;
+    STARTUPINFOW siStartInfo{};
     SECURITY_ATTRIBUTES saAttr{};
     PROCESS_INFORMATION piProcInfo{};
     JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = {};
@@ -300,21 +302,21 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq)
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
     if (commandReq.GetGroupName().empty()) {
-        szWindowName = commandReq.GetTargetAgent();
+        wszWindowName = commandReq.GetTargetAgent();
         commandType = CommandType::Execute;
         bIsGroupSession = FALSE;
     }
     else {
-        szWindowName = commandReq.GetGroupName();
+        wszWindowName = commandReq.GetGroupName();
         commandType = CommandType::GroupExecute;
         bIsGroupSession = TRUE;
     }
 
-    GetModuleFileNameA(NULL, carrSelfPath, MAX_PATH);
-    szProcessCommandLine = std::string(carrSelfPath) + " " + szWindowName;
-    bIsChildCreated = CreateProcessA(
+    GetModuleFileNameW(NULL, wcarrSelfPath, MAX_PATH);
+    wszProcessCommandLine = std::wstring(wcarrSelfPath) + L" " + wszWindowName;
+    bIsChildCreated = CreateProcessW(
         NULL,
-        &szProcessCommandLine[0],
+        &wszProcessCommandLine[0],
         NULL,
         NULL,
         TRUE,
@@ -326,7 +328,7 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq)
     );
 
     if (!bIsChildCreated) {
-        std::cerr << "Failed to start PowerShell.\n";
+        std::cerr << "Failed to start session window.\n";
         exit(1);
     }
 
@@ -340,44 +342,45 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq)
     CloseHandle(hChildStdinRead);
 
     // Get initial CWD
-    SendCommand(ControllerCommandReq(commandType, commandReq.GetTargetAgent(), commandReq.GetGroupName(), ""));
-    ReceiveData(szCommandOutput);
-    WriteToChild(hChildStdinWrite, szCommandOutput);
+    SendCommand(ControllerCommandReq(commandType, commandReq.GetTargetAgent(), commandReq.GetGroupName(), L""));
+    ReceiveData(wszCommandOutput);
+    WriteToChild(hChildStdinWrite, wszCommandOutput);
 
     while (bIsRunning) {
-        if (!ReadFromChild(hChildStdoutRead, szWindowCommand)) {
+        if (!ReadFromChild(hChildStdoutRead, wszWindowCommand)) {
             break;
         }
 
-        SendCommand(ControllerCommandReq(commandType, commandReq.GetTargetAgent(), commandReq.GetGroupName(), szWindowCommand));
-        ReceiveData(szCommandOutput);
+        SendCommand(ControllerCommandReq(commandType, commandReq.GetTargetAgent(), commandReq.GetGroupName(), wszWindowCommand));
+        ReceiveData(wszCommandOutput);
 
-        if (!WriteToChild(hChildStdinWrite, szCommandOutput)) {
+        if (!WriteToChild(hChildStdinWrite, wszCommandOutput)) {
             break;
         }
     }
 }
 
-BOOL Controller::ReadFromChild(HANDLE hChildStdoutRead, std::string& szCommand)
+BOOL Controller::ReadFromChild(HANDLE hChildStdoutRead, std::wstring& wszOutCommand)
 {
     BOOL bIsReadSuccess;
-    CHAR carrReadBuffer[MAX_BUFFER_SIZE];
+    WCHAR wcarrReadBuffer[MAX_BUFFER_SIZE];
     DWORD dwBytesRead;
-    bIsReadSuccess = ReadFile(hChildStdoutRead, carrReadBuffer, sizeof(carrReadBuffer) - 1, &dwBytesRead, NULL);
+    bIsReadSuccess = ReadFile(hChildStdoutRead, wcarrReadBuffer, sizeof(wcarrReadBuffer) - sizeof(WCHAR), &dwBytesRead, NULL);
 
     if (bIsReadSuccess) {
-        carrReadBuffer[dwBytesRead] = '\0';
-        szCommand = std::string(carrReadBuffer);
+        wcarrReadBuffer[dwBytesRead / sizeof(WCHAR)] = '\0';
+        wszOutCommand = std::wstring(wcarrReadBuffer);
     }
 
     return bIsReadSuccess;
 }
 
-BOOL Controller::WriteToChild(HANDLE hChildStdinWrite, const std::string& szData)
+BOOL Controller::WriteToChild(HANDLE hChildStdinWrite, const std::wstring& wszData)
 {
     BOOL bIsWriteSuccess;
     DWORD dwBytesWritten;
-    bIsWriteSuccess = WriteFile(hChildStdinWrite, szData.c_str(), szData.length(), &dwBytesWritten, NULL) || dwBytesWritten != szData.length();
+    bIsWriteSuccess = WriteFile(hChildStdinWrite, wszData.c_str(), wszData.length() * sizeof(WCHAR),
+        &dwBytesWritten, NULL) || dwBytesWritten != wszData.length() * sizeof(WCHAR);
 
     return bIsWriteSuccess;
 }
@@ -401,8 +404,8 @@ VOID Controller::ShowMan()
 }
 
 
-CommandType Controller::StringToCommandType(const std::string& szInput) {
-    auto it = StringToCommandTypeMap.find(szInput);
+CommandType Controller::StringToCommandType(const std::wstring& wszInput) {
+    auto it = StringToCommandTypeMap.find(wszInput);
     if (it != StringToCommandTypeMap.end()) {
         return it->second;
     }

@@ -2,10 +2,10 @@
 
 #include "pch.h"
 #include "Constants.hpp"
-
+#include "StringUtils.hpp"
 
 typedef struct SocketClientInfo {
-    std::string szIp;
+    std::wstring szIp;
     INT nPort;
 } SocketClientInfo;
 
@@ -29,10 +29,10 @@ public:
     }
 
     VOID GetSocketClientInfo(SocketClientInfo& outSocketClientInfo);
-    std::string GetSocketStr();
+    std::wstring GetSocketStr();
 
-    virtual BOOL SendData(const std::string& command) = 0;
-    virtual BOOL ReceiveData(std::string& szoutBuffer) = 0;
+    virtual BOOL SendData(const std::wstring& command) = 0;
+    virtual BOOL ReceiveData(std::wstring& szoutBuffer) = 0;
 
 protected:
     SOCKET socket;

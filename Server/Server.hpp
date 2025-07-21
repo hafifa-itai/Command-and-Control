@@ -20,19 +20,19 @@ public:
 	VOID DeleteAgentConnectionsFiles();
 
 	// Agent connections:
-	INT AssignSession(std::string szHostName);
-	BOOL CloseConnection(std::string szSocket);
+	INT AssignSession(std::wstring wszHostName);
+	BOOL CloseConnection(std::wstring wszSocket);
 	VOID CheckForAgentConnections();
 	VOID AddAgentConnection(SOCKET socket);
 	VOID RemoveConnectionFromAllGroups(AgentConnection* conn);
-	std::string GetActiveAgentSockets();
+	std::wstring GetActiveAgentSockets();
 	std::vector<AgentConnection*>::iterator RemoveAgentConnection(std::vector<AgentConnection*>::iterator& connectionIterator);
-	std::vector<AgentConnection*>::iterator FindConnectionFromSocketStr(std::string szSocket);
+	std::vector<AgentConnection*>::iterator FindConnectionFromSocketStr(std::wstring wszSocket);
 
 	// Controller connections:
 	VOID AddControllerConnection(SOCKET socket);
 	VOID CheckForControllerConnections();
-	VOID HandleControllerCommand(std::string szData,ControllerConnection* conn);
+	VOID HandleControllerCommand(std::wstring wszData,ControllerConnection* conn);
 	std::vector<ControllerConnection*>::iterator RemoveControllerConnection(std::vector<ControllerConnection*>::iterator& connectionIterator);
 
 	// Functions to handle socket fd_sets:

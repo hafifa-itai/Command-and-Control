@@ -8,8 +8,8 @@ SessionWindow::SessionWindow() {
 	hPipeToParent = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	// Handles to interact with the user:
-	hConsoleIn = CreateFileA(
-		"CONIN$",
+	hConsoleIn = CreateFileW(
+		L"CONIN$",
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL,
@@ -18,8 +18,8 @@ SessionWindow::SessionWindow() {
 		NULL
 	);
 
-	hConsoleOut = CreateFileA(
-		"CONOUT$",
+	hConsoleOut = CreateFileW(
+		L"CONOUT$",
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL,
@@ -36,7 +36,7 @@ SessionWindow::~SessionWindow()
 }
 
 VOID SessionWindow::PrintParentMessage() {
-	CHAR carrResponse[MAX_BUFFER_SIZE];
+	WCHAR wcarrResponse[MAX_BUFFER_SIZE];
 	DWORD dwBytesWritten;
 	DWORD dwBytesRead;
 	DWORD dwBytesAvailable;
@@ -49,9 +49,9 @@ VOID SessionWindow::PrintParentMessage() {
 		}
 
 		if (dwBytesAvailable > 0) {
-			if (ReadFile(hPipeFromParent, carrResponse, sizeof(carrResponse), &dwBytesRead, NULL) && dwBytesRead > 0) {
-				WriteConsoleA(hConsoleOut, carrResponse , dwBytesRead, &dwBytesWritten, NULL);
-				WriteConsoleA(hConsoleOut, "> ", 2, &dwBytesWritten, NULL);
+			if (ReadFile(hPipeFromParent, wcarrResponse, sizeof(wcarrResponse), &dwBytesRead, NULL) && dwBytesRead > 0) {
+				WriteConsoleW(hConsoleOut, wcarrResponse , dwBytesRead / sizeof(WCHAR), &dwBytesWritten, NULL);
+				WriteConsoleW(hConsoleOut, L"> ", 2, &dwBytesWritten, NULL);
 			}
 			else {
 				bIsRunning = FALSE;
@@ -67,23 +67,23 @@ VOID SessionWindow::PrintParentMessage() {
 VOID SessionWindow::GetUserCommands()
 {
 	BOOL bIsNewLine;
-	CHAR carrCommand[MAX_BUFFER_SIZE];
+	WCHAR wcarrCommand[MAX_BUFFER_SIZE];
 	DWORD dwBytesRead;
 	DWORD dwBytesWritten;
-	std::string szCommand;
+	std::wstring wszCommand;
 
 	while (bIsRunning) {
-		ReadConsoleA(hConsoleIn, carrCommand, sizeof(carrCommand) - 1, &dwBytesRead, NULL);
-
+		ReadConsoleW(hConsoleIn, wcarrCommand, sizeof(wcarrCommand) / sizeof(WCHAR) - sizeof(WCHAR), &dwBytesRead, NULL);
+		
 		if (dwBytesRead > 2) {
-			carrCommand[dwBytesRead - 2] = '\0';
+			wcarrCommand[dwBytesRead - 2] = '\0';
 
-			szCommand = std::string(carrCommand);
-			if (szCommand == EXIT_COMMAND || szCommand == QUIT_COMMAND) {
+			wszCommand = std::wstring(wcarrCommand);
+			if (wszCommand == EXIT_COMMAND || wszCommand == QUIT_COMMAND) {
 				bIsRunning = FALSE;
 				break;
 			}
-			else if (!WriteFile(hPipeToParent, szCommand.c_str(), szCommand.length(), &dwBytesWritten, NULL)) {
+			else if (!WriteFile(hPipeToParent, wszCommand.c_str(), wszCommand.length() * sizeof(WCHAR), &dwBytesWritten, NULL)) {
 				bIsRunning = FALSE;
 			}
 		}
@@ -91,7 +91,7 @@ VOID SessionWindow::GetUserCommands()
 			bIsRunning = FALSE;
 		}
 		else {
-			WriteConsoleA(hConsoleOut, "> ", 2, &dwBytesWritten, NULL);
+			WriteConsoleW(hConsoleOut, L"> ", 2, &dwBytesWritten, NULL);
 		}
 
 	}

@@ -2,6 +2,7 @@
 
 #include "pch.h"
 #include "Constants.hpp"
+#include "StringUtils.hpp"
 
 class PowerShellSession
 {
@@ -18,4 +19,3 @@ private:
     HANDLE hChildStdoutRead = NULL;
     PROCESS_INFORMATION piProcInfo = {};
 };
-
