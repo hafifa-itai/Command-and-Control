@@ -2,6 +2,8 @@
 
 #include "pch.h"
 #include "Constants.hpp"
+#include <stdexcept>
+#include <random>
 
 class PowerShellSession
 {

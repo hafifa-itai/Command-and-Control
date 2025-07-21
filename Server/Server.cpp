@@ -245,10 +245,11 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
     switch (controllerCommand.GetCommandType()) {
     case CommandType::Quit:
         bIsRunning = FALSE;
+        DeleteAgentConnectionsFiles();
         szResponse = "[*] Successfully killed server process\n";
         break;
 
-    case CommandType::Close:
+    case CommandType::Close: {
         bIsCommandSuccess = CloseConnection(controllerCommand.GetTargetAgent());
 
         if (bIsCommandSuccess) {
@@ -258,7 +259,7 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
             szResponse = "[!] Error closing connection with " + controllerCommand.GetTargetAgent() + "\n";
         }
         break;
-
+    }
     case CommandType::List:
         szResponse = GetActiveAgentSockets();
         break;
@@ -310,7 +311,7 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
             bIsCommandSuccess = groupManager.RemoveConnectionFromGroup(controllerCommand.GetGroupName(), agentConn);
 
             if (bIsCommandSuccess) {
-                szResponse = "[*] Successfully added " + controllerCommand.GetTargetAgent() + " to " +
+                szResponse = "[*] Successfully removed " + controllerCommand.GetTargetAgent() + " to " +
                     controllerCommand.GetGroupName() + " group\n";
             }
             else {
@@ -409,6 +410,22 @@ std::vector<AgentConnection*>::iterator Server::FindConnectionFromSocketStr(std:
 
     std::cout << "Could not find connection " << szSocket << "\n";
     return arrAgentConnections.end();
+}
+
+VOID Server::DeleteAgentConnectionsFiles()
+{
+    std::lock_guard<std::mutex> lock(mAgentConnectionsMutex);
+
+    for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
+        AgentConnection* conn = *connectionsIterator;
+
+        if (!conn->GetIsFileDeleted()) {
+            conn->SendData("quit");
+            conn->SetIsFileDeleted(TRUE);
+        }
+
+        ++connectionsIterator;
+    }
 }
 
 VOID Server::RemoveConnectionFromAllGroups(AgentConnection* conn)

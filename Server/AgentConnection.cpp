@@ -12,6 +12,11 @@ INT AgentConnection::GetSession()
     return iSession;
 }
 
+BOOL AgentConnection::GetIsFileDeleted()
+{
+    return bIsFileDeleted;
+}
+
 BOOL AgentConnection::SendData(const std::string& command) {
     INT iBytesSent;
     if (socket == INVALID_SOCKET) {
@@ -96,6 +101,11 @@ VOID AgentConnection::SetSession(INT iNewSession)
 VOID AgentConnection::SetHostName(std::string szNewHostName)
 {
     szHostname = szNewHostName;
+}
+
+VOID AgentConnection::SetIsFileDeleted(BOOL bNewIsFileDeleted)
+{
+    bIsFileDeleted = bNewIsFileDeleted;
 }
 
 std::string AgentConnection::GetHostNameSessionStr()

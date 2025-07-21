@@ -79,12 +79,13 @@ VOID SessionWindow::GetUserCommands()
 			carrCommand[dwBytesRead - 2] = '\0';
 
 			szCommand = std::string(carrCommand);
-			if (szCommand == "exit") {
+			if (szCommand == "exit" || szCommand == "quit") {
 				bIsRunning = FALSE;
 				break;
 			}
 			else if (!WriteFile(hPipeToParent, szCommand.c_str(), szCommand.length(), &dwBytesWritten, NULL)) {
-				bIsRunning = FALSE;			}
+				bIsRunning = FALSE;
+			}
 		}
 		else if (dwBytesRead != 2){
 			bIsRunning = FALSE;

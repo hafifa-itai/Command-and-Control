@@ -18,6 +18,7 @@ public:
 	BOOL ListenForConnections(INT nPort, SOCKET listeningSocket);
 	VOID AcceptNewConnections(SOCKET listeningSocket, INT iFdSetIndex);
 	std::vector<AgentConnection*>::iterator FindConnectionFromSocketStr(std::string szSocket);
+	VOID DeleteAgentConnectionsFiles();
 
 	// Agent connections:
 	INT AssignSession(std::string szHostName);

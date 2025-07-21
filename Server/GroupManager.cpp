@@ -117,7 +117,7 @@ VOID GroupManager::GetGroupNames(std::string& szOutput)
 {
 	std::lock_guard<std::mutex> lock(mGroupMapMutex);
 	if (groupMap.empty()) {
-		szOutput = "[!] No groups found";
+		szOutput = "[!] No groups found\n";
 	}
 	else {
 		for (const auto& keyPair : groupMap) {

