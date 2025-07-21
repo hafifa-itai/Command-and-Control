@@ -44,7 +44,6 @@ BOOL GroupManager::RemoveConnectionFromGroup(std::string szGroupName, AgentConne
 			return TRUE;
 		}
 		else {
-			std::cout << "Connection not found\n";
 			return FALSE;
 		}
 	}
@@ -65,11 +64,9 @@ BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szComma
 				conn->SendData(szCommand);
 				conn->GetDataFromQueue(szResponse, -1);
 				ParseAgentResponse(szResponse, szCwd);
-				//arrConnectionsCwds.push_back("\\\\" + conn->GetSocketStr() + "\\" + szCwd + ">\n");
 				arrConnectionsCwds.push_back("\\\\" + conn->GetHostNameSessionStr() + "\\" + szCwd + ">\n");
 
 				if (!szResponse.empty()) {
-					//szResponse = "[*] received from " + conn->GetSocketStr() + " : \n" + szResponse + "\n";
 					szResponse = "[*] received from " + conn->GetHostNameSessionStr() + " : \n" + szResponse + "\n";
 					szOutput.append(szResponse);
 				}
@@ -82,7 +79,6 @@ BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szComma
 			return TRUE;
 		}
 		else {
-			std::cout << "[*] Group " << szGroupName << " is empty\n";
 			return FALSE;
 		}
 	}

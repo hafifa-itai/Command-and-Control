@@ -62,9 +62,7 @@ BOOL AgentConnection::ReceiveData(std::string& szOutBuffer) {
             iTotalBytesReceived += iBytesReceived;
         }
 
-        std::cout << szOutBuffer;
-        return TRUE;
-        
+        return TRUE; 
     }
 
     return FALSE;

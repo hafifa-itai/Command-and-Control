@@ -3,6 +3,7 @@
 #define MAX_BUFFER_SIZE 4096
 #define CONTROLLER_PORT 3000
 #define AGENT_PORT 3001
+#define SERVER_IP "192.168.20.5"
 #define NO_GROUP ""
 #define CONTROLLER_INDEX 0
 #define AGENT_INDEX 1
@@ -10,6 +11,8 @@
 #define VERBOSE_JSON 4
 #define NOP_COMMAND "$null = $null"
 #define NOP_COMMAND_SIZE 13
+#define QUIT_COMMAND "quit"
+#define EXIT_COMMAND "exit"
 
 
 enum class CommandType : int {
@@ -27,7 +30,7 @@ enum class CommandType : int {
     ListGroup,
     ListGroupNames,
     Man,
-    SyntaxError
+    NewLine
 };
 
 
@@ -43,5 +46,6 @@ const std::unordered_map<std::string, CommandType> StringToCommandTypeMap = {
     {"group-remove", CommandType::GroupRemove},
     {"group-list",   CommandType::ListGroup},
     {"groups",       CommandType::ListGroupNames},
-    {"man",          CommandType::Man}
+    {"man",          CommandType::Man},
+    {"",             CommandType::NewLine}
 };

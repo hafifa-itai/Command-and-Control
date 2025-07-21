@@ -109,7 +109,7 @@ std::string PowerShellSession::RunCommand(const std::string& szCommand)
     BOOL bIsReadSuccess;
     BOOL bIsWriteSuccess;
     BOOL bIsPipeAvailable;
-    CHAR carrReadBuffer[4096];
+    CHAR carrReadBuffer[MAX_BUFFER_SIZE];
     DWORD dwBytesRead;
     DWORD dwBytesWritten;
     std::string szOutputBuffer;

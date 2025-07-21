@@ -79,7 +79,7 @@ VOID SessionWindow::GetUserCommands()
 			carrCommand[dwBytesRead - 2] = '\0';
 
 			szCommand = std::string(carrCommand);
-			if (szCommand == "exit" || szCommand == "quit") {
+			if (szCommand == EXIT_COMMAND || szCommand == QUIT_COMMAND) {
 				bIsRunning = FALSE;
 				break;
 			}

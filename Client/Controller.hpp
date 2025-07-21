@@ -17,7 +17,7 @@ public:
 	BOOL ReadFromChild(HANDLE hChildStdoutRead, std::string& szoutCommand);
 	VOID Run();
 	VOID HandleCommandObject(ControllerCommandReq commandReq);
-	VOID OpenSessionWindow(ControllerCommandReq commandReq,std::string szInitialCwd);
+	VOID OpenSessionWindow(ControllerCommandReq commandReq);
 	VOID ShowMan();
 	CommandType StringToCommandType(const std::string& szInput);
 	ControllerCommandReq ValidateUserInput();

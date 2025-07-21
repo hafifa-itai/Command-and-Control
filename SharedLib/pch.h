@@ -11,7 +11,7 @@
 #include <thread>
 #include <string>
 #include <sstream>
-#include <conio.h>
+#include <random>
 #include <mutex>
 #include <unordered_map>
 #include <algorithm>
