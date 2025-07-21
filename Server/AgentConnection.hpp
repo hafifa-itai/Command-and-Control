@@ -16,6 +16,7 @@ public:
     VOID RemoveFromGroup(std::string szGroupName);
     VOID SetSession(INT iNewSession);
     VOID SetHostName(std::string szNewHostName);
+    std::string GetHostNameSessionStr();
     std::string GetHostName();
     std::vector<std::string> GetGroups();
 

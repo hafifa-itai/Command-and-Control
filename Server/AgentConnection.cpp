@@ -98,6 +98,11 @@ VOID AgentConnection::SetHostName(std::string szNewHostName)
     szHostname = szNewHostName;
 }
 
+std::string AgentConnection::GetHostNameSessionStr()
+{
+    return GetHostName() + ":" + std::to_string(GetSession());
+}
+
 std::string AgentConnection::GetHostName()
 {
     return szHostname;

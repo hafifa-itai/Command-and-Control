@@ -65,10 +65,12 @@ BOOL GroupManager::BroadcastToGroup(std::string szGroupName, std::string szComma
 				conn->SendData(szCommand);
 				conn->GetDataFromQueue(szResponse, -1);
 				ParseAgentResponse(szResponse, szCwd);
-				arrConnectionsCwds.push_back("\\\\" + conn->GetSocketStr() + "\\" + szCwd + ">\n");
+				//arrConnectionsCwds.push_back("\\\\" + conn->GetSocketStr() + "\\" + szCwd + ">\n");
+				arrConnectionsCwds.push_back("\\\\" + conn->GetHostNameSessionStr() + "\\" + szCwd + ">\n");
 
 				if (!szResponse.empty()) {
-					szResponse = "[*] received from " + conn->GetSocketStr() + " : \n" + szResponse + "\n";
+					//szResponse = "[*] received from " + conn->GetSocketStr() + " : \n" + szResponse + "\n";
+					szResponse = "[*] received from " + conn->GetHostNameSessionStr() + " : \n" + szResponse + "\n";
 					szOutput.append(szResponse);
 				}
 			}
@@ -97,7 +99,7 @@ BOOL GroupManager::ListGroupMembers(std::string szGroupName, std::string& szOutp
 		if (connectionsGroup.size()) {
 			szOutput += "[*] Group " + szGroupName + " active connections:\n";
 			for (AgentConnection* conn : connectionsGroup) {
-				szOutput += "[*] " + conn->GetSocketStr() + "\n";
+				szOutput += "[*] IP: " + conn->GetSocketStr() + " | Host: " + conn->GetHostNameSessionStr() + "\n";
 			}
 		}
 		else {
