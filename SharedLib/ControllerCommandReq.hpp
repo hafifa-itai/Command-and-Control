@@ -9,14 +9,15 @@ class ControllerCommandReq
 public:
 	ControllerCommandReq(CommandType commandType, std::string szTargetAgent, std::string szGroupName, std::string szParameters);
 	ControllerCommandReq();
-	CommandType GetCommandType() const;
-	std::string GetTargetAgent() const;
-	std::string GetGroupName() const;
-	std::string GetParameters() const;
+
     VOID SetCommandType(CommandType type);
     VOID SetTargetAgent(const std::string& agent);
     VOID SetGroupName(const std::string& group);
     VOID SetParameters(const std::string& params);
+	CommandType GetCommandType() const;
+	std::string GetTargetAgent() const;
+	std::string GetGroupName() const;
+	std::string GetParameters() const;
 
 private:
 	CommandType commandType;

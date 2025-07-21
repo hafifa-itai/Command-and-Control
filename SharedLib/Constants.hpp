@@ -13,6 +13,7 @@
 #define NOP_COMMAND_SIZE 13
 #define QUIT_COMMAND "quit"
 #define EXIT_COMMAND "exit"
+#define MAX_MSG_SIZE 20 * 1024 * 1024 //20MB
 
 
 enum class CommandType : int {

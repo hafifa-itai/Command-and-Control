@@ -9,9 +9,9 @@ public:
     PowerShellSession();
     ~PowerShellSession();
 
-    std::string generateUniqueMarker();
-    std::string CleanOutput(std::string& szOutputBuffer, const std::string& szUniqueMarker, size_t markerPos);
     std::string RunCommand(const std::string& szCommandmd);
+    std::string CleanOutput(std::string& szOutputBuffer, const std::string& szUniqueMarker, size_t markerPos);
+    std::string generateUniqueMarker();
 
 private:
     HANDLE hChildStdinWrite = NULL;

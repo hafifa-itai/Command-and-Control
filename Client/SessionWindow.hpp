@@ -9,8 +9,8 @@ public:
 	SessionWindow();
 	~SessionWindow();
 
-	VOID PrintParentMessage();
 	VOID GetUserCommands();
+	VOID PrintParentMessage();
 
 private:
 	BOOL bIsRunning;

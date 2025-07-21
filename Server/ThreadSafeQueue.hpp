@@ -2,7 +2,6 @@
 
 #include "pch.h"
 
-
 class ThreadSafeQueue {
 public:
     VOID Push(std::string szData);
