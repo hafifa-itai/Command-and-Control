@@ -29,13 +29,13 @@ private:
 
 inline VOID to_json(nlohmann::json& j, const ControllerCommandReq& req) {
 	j["commandType"] = static_cast<int>(req.GetCommandType());
-	j["targetAgent"] = wstring_to_utf8(req.GetTargetAgent());
-	j["groupName"] = wstring_to_utf8(req.GetGroupName());
-	j["parameters"] = wstring_to_utf8(req.GetParameters());
+	j["targetAgent"] = WstringToString(req.GetTargetAgent());
+	j["groupName"] = WstringToString(req.GetGroupName());
+	j["parameters"] = WstringToString(req.GetParameters());
 }
 inline VOID from_json(const nlohmann::json& j, ControllerCommandReq& req) {
 	req.SetCommandType(static_cast<CommandType>(j.value("commandType", CommandType::Unknown)));
-	req.SetTargetAgent(utf8_to_wstring(j.value("targetAgent", "")));
-	req.SetGroupName(utf8_to_wstring(j.value("groupName", "")));
-	req.SetParameters(utf8_to_wstring(j.value("parameters", "")));
+	req.SetTargetAgent(StringToWstring(j.value("targetAgent", "")));
+	req.SetGroupName(StringToWstring(j.value("groupName", "")));
+	req.SetParameters(StringToWstring(j.value("parameters", "")));
 }

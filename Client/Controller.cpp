@@ -225,7 +225,7 @@ BOOL Controller::SendCommand(ControllerCommandReq commandReq)
         return FALSE;
     }
     szTempJson = j.dump(VERBOSE_JSON);
-    wszCommand = utf8_to_wstring(szTempJson);
+    wszCommand = StringToWstring(szTempJson);
     iBytesSent = send(sock, reinterpret_cast<const CHAR*>(wszCommand.c_str()), static_cast<int>(wszCommand.size() * sizeof(WCHAR)), 0);
 
     return iBytesSent == wszCommand.size() * sizeof(WCHAR);

